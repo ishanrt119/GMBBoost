@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { runFullAudit } from "@/services/audit-engine";
+import dbConnect from "@/lib/mongodb";
+import Audit from "@/models/Audit";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // This now returns an in-memory object, no database used
+    // Runs audit, fetches Google Maps data, analyzes with AI, and stores in MongoDB
     const audit = await runFullAudit(query);
 
     return NextResponse.json(audit);
@@ -22,18 +24,34 @@ export async function POST(request: Request) {
     console.error("Audit API Error Details:", {
       message: error.message,
       status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url
     });
     
-    const statusCode = error.response?.status === 401 ? 401 : 500;
-    const errorMessage = error.response?.status === 401 
-      ? `Authentication Failed: Please check your ${error.config?.url?.includes('serpapi') ? 'SERPAPI_KEY' : 'GROQ_API_KEY'} in .env`
-      : error.message || "Failed to run audit";
-
     return NextResponse.json(
-      { error: errorMessage },
-      { status: statusCode }
+      { error: error.message || "Failed to run audit" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    await dbConnect();
+    
+    const { searchParams } = new URL(request.url);
+    const businessId = searchParams.get("businessId");
+    
+    let audits;
+    if (businessId) {
+      audits = await Audit.find({ businessId }).sort({ createdAt: -1 }).populate('businessId');
+    } else {
+      audits = await Audit.find({}).sort({ createdAt: -1 }).populate('businessId');
+    }
+
+    return NextResponse.json(audits);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Failed to fetch audits" },
+      { status: 500 }
     );
   }
 }

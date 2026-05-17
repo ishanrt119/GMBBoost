@@ -1,7 +1,13 @@
 import { fetchGMBData } from "./google-maps";
 import { analyzeBusinessData } from "./ai-analysis";
+import dbConnect from "@/lib/mongodb";
+import Business from "@/models/Business";
+import Audit from "@/models/Audit";
+import Review from "@/models/Review";
 
 export async function runFullAudit(query: string) {
+  await dbConnect();
+
   // 1. Fetch real data from Google Maps (via SerpApi)
   const gmbData = await fetchGMBData(query);
 
@@ -14,7 +20,7 @@ export async function runFullAudit(query: string) {
       rating: gmbData.rating,
       reviewCount: gmbData.reviews,
     },
-    gmbData.reviews_data
+    gmbData.reviews_data || []
   );
 
   // 3. Calculate Scores
@@ -27,20 +33,31 @@ export async function runFullAudit(query: string) {
     (completenessScore + reviewScore + seoScore + engagementScore) / 4
   );
 
-  // 4. Construct Result Object (No Database)
-  const audit = {
-    id: `audit_${Date.now()}`,
-    business: {
+  // 4. Save to MongoDB
+  // Save or update Business
+  let business = await Business.findOne({ placeId: gmbData.place_id });
+  if (!business) {
+    business = await Business.create({
       name: gmbData.title,
-      category: gmbData.category,
-      address: gmbData.address,
+      category: gmbData.category || "Uncategorized",
+      address: gmbData.address || "No address provided",
       phone: gmbData.phone,
       website: gmbData.website,
-      rating: gmbData.rating,
-      reviewCount: gmbData.reviews,
+      rating: gmbData.rating || 0,
+      reviewCount: gmbData.reviews || 0,
       placeId: gmbData.place_id,
-      photos: gmbData.photos,
-    },
+      keywords: aiResult.keywords || [],
+    });
+  } else {
+    business.rating = gmbData.rating || business.rating;
+    business.reviewCount = gmbData.reviews || business.reviewCount;
+    business.keywords = aiResult.keywords || business.keywords;
+    await business.save();
+  }
+
+  // Save Audit
+  const audit = await Audit.create({
+    businessId: business._id,
     overallScore,
     seoScore,
     reviewScore,
@@ -48,17 +65,34 @@ export async function runFullAudit(query: string) {
     completenessScore,
     aiSummary: aiResult.summary,
     recommendations: aiResult.prioritizedActions,
-    reviews: gmbData.reviews_data.map((r: any, idx: number) => ({
-      id: `rev_${idx}`,
-      reviewer: r.author_name || r.user?.name,
-      rating: r.rating,
-      text: r.text || r.snippet,
-      sentiment: r.rating >= 4 ? "Positive" : r.rating <= 2 ? "Negative" : "Neutral",
-    })),
-    createdAt: new Date().toISOString(),
-  };
+  });
 
-  return audit;
+  // Save Reviews if any
+  const savedReviews = [];
+  if (gmbData.reviews_data && gmbData.reviews_data.length > 0) {
+    for (const r of gmbData.reviews_data) {
+      const reviewText = r.text || r.snippet || "";
+      const rating = r.rating || 0;
+      let sentiment = "neutral";
+      if (rating >= 4) sentiment = "positive";
+      else if (rating <= 2) sentiment = "negative";
+
+      const review = await Review.create({
+        businessId: business._id,
+        reviewer: r.author_name || r.user?.name || "Anonymous",
+        rating,
+        reviewText,
+        sentiment,
+      });
+      savedReviews.push(review);
+    }
+  }
+
+  return {
+    ...audit.toObject(),
+    business: business.toObject(),
+    reviews: savedReviews.map(r => r.toObject())
+  };
 }
 
 // Helper functions for scoring
@@ -73,8 +107,8 @@ function calculateCompleteness(data: any) {
 }
 
 function calculateReviewScore(data: any) {
-  const ratingScore = (data.rating / 5) * 60;
-  const volumeScore = Math.min((data.reviews / 100) * 40, 40);
+  const ratingScore = ((data.rating || 0) / 5) * 60;
+  const volumeScore = Math.min(((data.reviews || 0) / 100) * 40, 40);
   return Math.round(ratingScore + volumeScore);
 }
 

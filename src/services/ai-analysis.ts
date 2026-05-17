@@ -4,8 +4,11 @@ let groq: Groq | null = null;
 
 function getGroq() {
   if (!groq) {
+    if (!process.env.GROQ_API_KEY) {
+      console.warn("GROQ_API_KEY is missing. AI analysis will fail.");
+    }
     groq = new Groq({
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey: process.env.GROQ_API_KEY || "",
     });
   }
   return groq;
@@ -37,13 +40,13 @@ export async function analyzeBusinessData(
     Business: ${JSON.stringify(businessInfo)}
     Reviews: ${reviewsText}
 
-    Generate a comprehensive audit report in JSON format with the following keys:
-    1. sentiment: A summary of customer sentiment (Positive, Neutral, Negative).
-    2. insights: Key takeaways from reviews.
-    3. seoRecommendations: 5 actionable SEO tips for the description and category.
-    4. keywords: 10 relevant keywords to include in posts and description.
-    5. prioritizedActions: An array of 4-6 objects with {title, description, priority, impact, difficulty}.
-    6. summary: A 2-sentence executive summary.
+    Generate a comprehensive audit report in JSON format with the exact following keys:
+    1. "sentiment": A summary of customer sentiment (Positive, Neutral, Negative).
+    2. "insights": Key takeaways from reviews.
+    3. "seoRecommendations": 5 actionable SEO tips for the description and category.
+    4. "keywords": 10 relevant keywords to include in posts and description.
+    5. "prioritizedActions": An array of 4-6 objects with {title, description, priority, impact, difficulty}.
+    6. "summary": A 2-sentence executive summary.
 
     Ensure the response is strictly JSON. No markdown or extra text.
   `;
