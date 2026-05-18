@@ -21,7 +21,7 @@ export default function ChatModal({ lead, onClose }: any) {
     try {
       const res = await fetch(`/api/conversations/${lead._id}`);
       const data = await res.json();
-      
+
       // Filter out duplicate IDs to prevent rendering glitches
       const uniqueMessages = Array.from(new Map(data.map((item: any) => [item._id, item])).values());
       setConversations(uniqueMessages as any[]);
@@ -43,7 +43,7 @@ export default function ChatModal({ lead, onClose }: any) {
       timestamp: new Date().toISOString(),
       messageType: 'text'
     };
-    
+
     // Optimistic UI update
     setConversations(prev => [...prev, newMessage]);
     setInput('');
@@ -52,7 +52,7 @@ export default function ChatModal({ lead, onClose }: any) {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -69,7 +69,7 @@ export default function ChatModal({ lead, onClose }: any) {
                 <div className="text-sm text-white/40">{lead.phone} • {lead.status}</div>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
             >
