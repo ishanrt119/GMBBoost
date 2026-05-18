@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, User, Bot, Loader2 } from 'lucide-react';
+import { X, Send, User, Bot, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ChatModal({ lead, onClose }: any) {
@@ -21,7 +21,10 @@ export default function ChatModal({ lead, onClose }: any) {
     try {
       const res = await fetch(`/api/conversations/${lead._id}`);
       const data = await res.json();
-      setConversations(data);
+      
+      // Filter out duplicate IDs to prevent rendering glitches
+      const uniqueMessages = Array.from(new Map(data.map((item: any) => [item._id, item])).values());
+      setConversations(uniqueMessages as any[]);
     } catch (error) {
       console.error("Failed to fetch conversations", error);
     } finally {
@@ -37,16 +40,13 @@ export default function ChatModal({ lead, onClose }: any) {
       _id: Date.now().toString(),
       sender: 'user',
       message: input,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      messageType: 'text'
     };
     
     // Optimistic UI update
     setConversations(prev => [...prev, newMessage]);
     setInput('');
-
-    // In a real implementation, you would send this to the server to simulate the AI reply.
-    // Since the actual WhatsApp webhook handles incoming messages and AI replies, 
-    // sending from dashboard could be implemented as a separate manual override endpoint.
   };
 
   return (
@@ -88,21 +88,31 @@ export default function ChatModal({ lead, onClose }: any) {
                 No conversation history yet.
               </div>
             ) : (
-              conversations.map((msg, idx) => {
+              conversations.map((msg) => {
                 const isAI = msg.sender === 'ai';
+                const isSystem = msg.sender === 'system';
+                const isMedia = msg.messageType === 'media' || msg.message === '[Media Message]';
+
                 return (
-                  <div key={msg._id || idx} className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`max-w-[80%] flex gap-3 ${isAI ? 'flex-row' : 'flex-row-reverse'}`}>
+                  <div key={msg._id} className={`flex ${isAI || isSystem ? 'justify-start' : 'justify-end'}`}>
+                    <div className={`max-w-[80%] flex gap-3 ${isAI || isSystem ? 'flex-row' : 'flex-row-reverse'}`}>
                       <div className="flex-shrink-0 mt-auto">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${isAI ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-white/10 border-white/20 text-white/60'}`}>
-                          {isAI ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${isAI ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : isSystem ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-white/10 border-white/20 text-white/60'}`}>
+                          {isSystem ? <AlertCircle className="w-4 h-4" /> : isAI ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
                         </div>
                       </div>
                       <div>
-                        <div className={`p-4 rounded-2xl text-sm ${isAI ? 'bg-white/10 rounded-bl-sm text-white/90' : 'bg-purple-600 rounded-br-sm text-white'}`}>
-                          {msg.message}
+                        <div className={`p-4 rounded-2xl text-sm ${isAI ? 'bg-white/10 rounded-bl-sm text-white/90' : isSystem ? 'bg-orange-500/10 text-orange-200 rounded-bl-sm border border-orange-500/20' : 'bg-purple-600 rounded-br-sm text-white'}`}>
+                          {isMedia ? (
+                            <div className="flex items-center gap-2 italic opacity-80">
+                              <ImageIcon className="w-4 h-4" />
+                              Media Attachment
+                            </div>
+                          ) : (
+                            msg.message
+                          )}
                         </div>
-                        <div className={`text-[10px] text-white/30 mt-2 font-medium ${isAI ? 'text-left' : 'text-right'}`}>
+                        <div className={`text-[10px] text-white/30 mt-2 font-medium ${isAI || isSystem ? 'text-left' : 'text-right'}`}>
                           {format(new Date(msg.timestamp), 'h:mm a')}
                         </div>
                       </div>
@@ -126,7 +136,8 @@ export default function ChatModal({ lead, onClose }: any) {
               />
               <button
                 type="submit"
-                className="absolute right-2 top-2 bottom-2 w-10 bg-purple-500 hover:bg-purple-400 text-white rounded-full flex items-center justify-center transition-colors"
+                disabled={!input.trim()}
+                className="absolute right-2 top-2 bottom-2 w-10 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 disabled:hover:bg-purple-500 text-white rounded-full flex items-center justify-center transition-colors"
               >
                 <Send className="w-4 h-4" />
               </button>

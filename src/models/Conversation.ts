@@ -6,6 +6,12 @@ export interface IConversation extends Document {
   message: string;
   aiGenerated: boolean;
   timestamp: Date;
+  
+  twilioMessageSid?: string;
+  messageType?: string;
+  aiProcessed?: boolean;
+  failedReason?: string;
+  duplicateEvent?: boolean;
 }
 
 const ConversationSchema: Schema = new Schema(
@@ -14,7 +20,13 @@ const ConversationSchema: Schema = new Schema(
     sender: { type: String, enum: ['user', 'ai', 'system'], required: true },
     message: { type: String, required: true },
     aiGenerated: { type: Boolean, default: false },
-    timestamp: { type: Date, default: Date.now, index: true }
+    timestamp: { type: Date, default: Date.now, index: true },
+
+    twilioMessageSid: { type: String, index: true },
+    messageType: { type: String, default: 'text' },
+    aiProcessed: { type: Boolean, default: false },
+    failedReason: { type: String },
+    duplicateEvent: { type: Boolean, default: false },
   },
   { timestamps: false }
 );
