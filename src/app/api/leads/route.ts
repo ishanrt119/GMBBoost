@@ -1,26 +1,14 @@
-import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
-import Lead from "@/models/Lead";
+import { NextRequest, NextResponse } from 'next/server';
+import dbConnect from '@/lib/mongodb';
+import Lead from '@/models/Lead';
 
-export const dynamic = "force-dynamic";
-
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const leads = await Lead.find({}).sort({ createdAt: -1 });
+    const leads = await Lead.find().sort({ updatedAt: -1 });
     return NextResponse.json(leads);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    await dbConnect();
-    const body = await request.json();
-    const lead = await Lead.create(body);
-    return NextResponse.json(lead, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

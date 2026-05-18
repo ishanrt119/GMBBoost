@@ -4,9 +4,10 @@ export interface ILead extends Document {
   name: string;
   phone: string;
   source: string;
-  status: string;
-  notes: string;
-  assignedTo: mongoose.Types.ObjectId;
+  status: 'New' | 'Contacted' | 'Qualified' | 'Interested' | 'Converted' | 'Lost';
+  interest?: string;
+  notes?: string;
+  tags?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,11 +15,17 @@ export interface ILead extends Document {
 const LeadSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
-    phone: { type: String },
-    source: { type: String, required: true },
-    status: { type: String, enum: ['new', 'contacted', 'qualified', 'converted', 'lost'], default: 'new', index: true },
+    phone: { type: String, required: true, index: true },
+    source: { type: String, default: 'WhatsApp' },
+    status: { 
+      type: String, 
+      enum: ['New', 'Contacted', 'Qualified', 'Interested', 'Converted', 'Lost'], 
+      default: 'New', 
+      index: true 
+    },
+    interest: { type: String },
     notes: { type: String },
-    assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
+    tags: [{ type: String }],
   },
   { timestamps: true }
 );
