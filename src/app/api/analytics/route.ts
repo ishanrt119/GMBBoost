@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Conversation from '@/models/Conversation';
+import Appointment from '@/models/Appointment';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,12 +26,32 @@ export async function GET(req: NextRequest) {
     ]);
     const leadsByStatus = statusesAgg.map(s => ({ name: s._id, value: s.count }));
 
+    // NEW: Qualification Funnel
+    const qualificationAgg = await Lead.aggregate([
+      { $group: { _id: "$qualificationStatus", count: { $sum: 1 } } }
+    ]);
+    const qualificationFunnel = qualificationAgg.map(q => ({ name: q._id || 'Unqualified', value: q.count }));
+
+    // NEW: Urgency Breakdown
+    const urgencyAgg = await Lead.aggregate([
+      { $group: { _id: "$urgency", count: { $sum: 1 } } }
+    ]);
+    const urgencyBreakdown = urgencyAgg.map(u => ({ name: u._id || 'None', value: u.count }));
+
+    // NEW: Bookings Info
+    const totalAppointments = await Appointment.countDocuments();
+    const completedAppointments = await Appointment.countDocuments({ status: 'Completed' });
+    const bookingSuccessRate = totalAppointments > 0 ? (completedAppointments / totalAppointments) * 100 : 0;
+
     return NextResponse.json({
       totalLeads,
       conversionRate: conversionRate.toFixed(1),
       leadSources,
       aiResponseCount,
-      leadsByStatus
+      leadsByStatus,
+      qualificationFunnel,
+      urgencyBreakdown,
+      bookingSuccessRate: bookingSuccessRate.toFixed(1)
     });
 
   } catch (error) {

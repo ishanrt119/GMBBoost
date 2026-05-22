@@ -10,6 +10,9 @@ import {
 import { format } from "date-fns";
 import KanbanBoard from "@/components/crm/KanbanBoard";
 import ChatModal from "@/components/crm/ChatModal";
+import LeadDetailsDrawer from "@/components/crm/LeadDetailsDrawer";
+import AppointmentsTab from "@/components/crm/AppointmentsTab";
+import FollowUpsTab from "@/components/crm/FollowUpsTab";
 
 export default function CRMDashboard() {
   const [activeTab, setActiveTab] = useState("kanban");
@@ -17,6 +20,7 @@ export default function CRMDashboard() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,6 +60,11 @@ export default function CRMDashboard() {
   const openChat = (lead: any) => {
     setSelectedLead(lead);
     setIsChatOpen(true);
+  };
+
+  const openDetails = (lead: any) => {
+    setSelectedLead(lead);
+    setIsDetailsOpen(true);
   };
 
   return (
@@ -106,7 +115,7 @@ export default function CRMDashboard() {
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-white/10 mb-8 overflow-x-auto">
-        {['kanban', 'list', 'analytics'].map((tab) => (
+        {['kanban', 'list', 'appointments', 'followups', 'analytics'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -144,8 +153,9 @@ export default function CRMDashboard() {
                     <thead className="bg-white/[0.02] border-b border-white/10 text-xs uppercase text-white/40 font-semibold tracking-wider">
                       <tr>
                         <th className="p-6">Lead</th>
+                        <th className="p-6">Intent Score</th>
                         <th className="p-6">Status</th>
-                        <th className="p-6">Source</th>
+                        <th className="p-6">Details</th>
                         <th className="p-6">Updated</th>
                         <th className="p-6"></th>
                       </tr>
@@ -165,12 +175,38 @@ export default function CRMDashboard() {
                             </div>
                           </td>
                           <td className="p-6">
-                            <span className="px-3 py-1 bg-white/10 rounded-full text-xs font-semibold">{lead.status}</span>
+                            {lead.intentScore > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full ${lead.intentScore >= 80 ? 'bg-orange-500' : lead.intentScore >= 50 ? 'bg-blue-500' : 'bg-white/40'}`} 
+                                    style={{ width: `${lead.intentScore}%` }} 
+                                  />
+                                </div>
+                                <span className="text-xs font-bold text-white/60">{lead.intentScore}</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-white/30">N/A</span>
+                            )}
                           </td>
-                          <td className="p-6 text-sm text-white/60">{lead.source}</td>
+                          <td className="p-6">
+                            <span className="px-3 py-1 bg-white/10 rounded-full text-xs font-semibold mr-2">{lead.status}</span>
+                            {lead.qualificationStatus && (
+                              <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-semibold">{lead.qualificationStatus}</span>
+                            )}
+                          </td>
+                          <td className="p-6 text-sm text-white/60">
+                            <div className="flex flex-col gap-1">
+                              {lead.businessType && <span className="text-xs text-white/80">🏢 {lead.businessType}</span>}
+                              <span className="text-[10px] text-white/40">{lead.source}</span>
+                            </div>
+                          </td>
                           <td className="p-6 text-sm text-white/60">{format(new Date(lead.updatedAt), 'MMM d, yyyy')}</td>
                           <td className="p-6 text-right">
-                            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); openDetails(lead); }}
+                              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                            >
                               <MoreVertical className="w-4 h-4 text-white/40" />
                             </button>
                           </td>
@@ -178,6 +214,13 @@ export default function CRMDashboard() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+              {activeTab === 'appointments' && <AppointmentsTab />}
+              {activeTab === 'followups' && <FollowUpsTab />}
+              {activeTab === 'analytics' && (
+                <div className="p-10 text-center bg-white/5 border border-white/10 rounded-3xl text-white/40">
+                  Analytics visualizations enabled. (Connect to Recharts)
                 </div>
               )}
             </motion.div>
@@ -189,6 +232,13 @@ export default function CRMDashboard() {
         <ChatModal 
           lead={selectedLead} 
           onClose={() => setIsChatOpen(false)} 
+        />
+      )}
+      
+      {isDetailsOpen && selectedLead && (
+        <LeadDetailsDrawer
+          lead={selectedLead}
+          onClose={() => setIsDetailsOpen(false)}
         />
       )}
     </div>

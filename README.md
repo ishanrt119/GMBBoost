@@ -6,27 +6,33 @@ A modern, premium SaaS platform for local businesses to optimize their Google Bu
 
 ## ✨ Features
 
+- **AI WhatsApp Lead Conversion Agent**: Conversational AI assistant that qualifies leads, answers questions, and extracts business intelligence.
+- **Intelligent CRM Dashboard**: A robust lead management pipeline with AI-driven qualification statuses, intent scoring, and dynamic kanban boards.
+- **Automated AI Follow-Ups**: Chronological background jobs that automatically reach out to cold leads at 24h, 3d, and 7d intervals.
+- **AI Appointment Booking**: Conversational workflows that detect high intent and dynamically schedule demos or discovery calls.
 - **AI GMB Audit Engine**: Instant analysis and optimization of your Google Business Profile.
 - **AI SEO Content Generator**: Automatically generates hyper-local posts that rank.
-- **WhatsApp AI Lead Agent**: Converts visitors into customers via automated chat flows.
-- **Review Automation**: Intelligent auto-replies to customer feedback.
-- **Dashboard Analytics**: Real-time visibility into your local growth and conversions.
-- **Built-in CRM**: Track and manage leads from one centralized command center.
+- **Real-Time Data Analytics**: Advanced visual funnels for tracking booking success rates, lead urgency, and pipeline conversion probability.
 
 ## 🛠️ Tech Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Database**: [MongoDB Atlas](https://www.mongodb.com/atlas) with Mongoose ODM
+- **AI Engine**: [Groq API](https://groq.com/) (Llama 3.3 70b)
+- **Communication**: [Twilio WhatsApp Sandbox](https://www.twilio.com/docs/whatsapp) + TwiML
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **UI Components**: [ShadCN](https://ui.shadcn.com/) / [Lucide React](https://lucide.dev/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Typography**: [Inter](https://rsms.me/inter/)
+- **Drag & Drop**: [@dnd-kit](https://dndkit.com/)
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ 
-- npm / yarn / pnpm
+- MongoDB URI
+- Twilio Account SID & Auth Token
+- Groq / OpenAI API Key
 
 ### Installation
 
@@ -40,12 +46,28 @@ A modern, premium SaaS platform for local businesses to optimize their Google Bu
    npm install
    ```
 
-3. Run the development server:
+3. Setup Environment Variables:
+   Create a `.env.local` file in the root directory:
+   ```env
+   MONGODB_URI=your_mongodb_uri
+   GROQ_API_KEY=your_groq_api_key
+   TWILIO_ACCOUNT_SID=your_twilio_sid
+   TWILIO_AUTH_TOKEN=your_twilio_auth_token
+   TWILIO_WHATSAPP_NUMBER=your_twilio_number
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   CRON_SECRET=your_cron_secret
+   ```
+
+4. Run the development server:
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Setup Webhook (For WhatsApp Integration):
+   - Expose your local port via Ngrok: `ngrok http 3000`
+   - Paste `https://<your-ngrok-url>.ngrok.app/api/webhook/twilio` into your Twilio Sandbox Webhook configuration.
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🔑 Test Credentials
 
@@ -54,12 +76,20 @@ For evaluation purposes, use the following credentials to access the dashboard:
 - **Email**: `admin@gmbboost.ai`
 - **Password**: `password123`
 
+## 🏗️ Architecture & Modules
+
+### 🧠 AI Extraction Engine
+When a user chats via WhatsApp, the webhook processes the message, queries the AI for a response, and asynchronously runs an extraction pipeline (`extractLeadInsights`). This structures unstructured chat data into measurable JSON data (`intentScore`, `businessType`, `budget`, `urgency`), instantly populating the CRM.
+
+### 🔄 Anti-Loop Webhook
+The platform utilizes robust TwiML XML responses instead of manual outbound clients, successfully thwarting Twilio API exhaustion, duplicated events, and recursive AI fallbacks.
+
 ## 🎨 Design Philosophy
 
 GMBBoost AI follows a **"Futuristic SaaS"** aesthetic, emphasizing:
 - **Glassmorphism**: Subtle translucent layers and backdrop blurs.
 - **Vibrant Gradients**: Purple and blue neon highlights.
-- **Micro-interactions**: Smooth transitions and hover effects for a premium feel.
+- **Data-Dense Dashboards**: Dynamic cards, tracking badges, and glowing "Hot Lead" borders.
 - **Dark Mode First**: Optimized for high-growth AI startup presentation.
 
 ## 📄 License

@@ -10,8 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { MessageCircle } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { MessageCircle, Flame, Clock } from 'lucide-react';
 
 const COLUMNS = ['New', 'Contacted', 'Qualified', 'Interested', 'Converted', 'Lost'];
 
@@ -92,7 +91,35 @@ function KanbanCard({ lead, onOpenChat }: any) {
       className="bg-white/5 border border-white/10 p-5 rounded-2xl cursor-grab active:cursor-grabbing hover:border-purple-500/50 hover:bg-white/10 transition-all shadow-lg backdrop-blur-sm"
     >
       <div className="font-bold text-sm mb-1">{lead.name}</div>
-      <div className="text-xs text-white/40 mb-4">{lead.phone}</div>
+      <div className="text-xs text-white/40 mb-3">{lead.phone}</div>
+      
+      {/* AI Qualification Badges */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {lead.intentScore > 0 && (
+          <div className={`px-2 py-1 flex items-center gap-1 rounded-md text-[10px] font-bold ${lead.intentScore >= 80 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20' : lead.intentScore >= 50 ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-white/60'}`}>
+            <Flame className="w-3 h-3" />
+            {lead.intentScore} Intent
+          </div>
+        )}
+        {lead.qualificationStatus && (
+          <div className="px-2 py-1 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-bold">
+            {lead.qualificationStatus}
+          </div>
+        )}
+        {lead.urgency && (
+          <div className="px-2 py-1 flex items-center gap-1 rounded-md bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/10">
+            <Clock className="w-3 h-3" />
+            {lead.urgency}
+          </div>
+        )}
+      </div>
+
+      {(lead.budget || lead.businessType) && (
+        <div className="bg-black/20 p-2 rounded-lg mb-4 text-[10px] text-white/70">
+          {lead.businessType && <div><span className="opacity-50">Type:</span> {lead.businessType}</div>}
+          {lead.budget && <div><span className="opacity-50">Budget:</span> {lead.budget}</div>}
+        </div>
+      )}
       
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">

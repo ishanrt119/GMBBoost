@@ -3,7 +3,7 @@ import twilio from 'twilio';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Conversation from '@/models/Conversation';
-import { generateSalesResponse } from '@/services/ai';
+import { generateSalesResponse, extractLeadInsights } from '@/services/ai';
 
 const { MessagingResponse } = twilio.twiml;
 
@@ -173,7 +173,48 @@ export async function POST(req: NextRequest) {
     // Mark original message as processed
     await Conversation.updateOne({ twilioMessageSid: messageSid }, { $set: { aiProcessed: true } });
 
-    // 10. Return valid TwiML Response
+    // 10. Background or inline Extraction of CRM fields
+    if (aiResponse !== FALLBACK_MESSAGE) {
+      // Re-fetch or build history including the new messages
+      const updatedAiContext = [...aiContext, { role: 'assistant', content: aiResponse }];
+      
+      try {
+        const insights = await extractLeadInsights(updatedAiContext, {
+          businessType: lead.businessType,
+          budget: lead.budget,
+          urgency: lead.urgency,
+          intentScore: lead.intentScore,
+          qualificationStatus: lead.qualificationStatus
+        });
+
+        if (insights) {
+          if (insights.businessType) lead.businessType = insights.businessType;
+          if (insights.budget) lead.budget = insights.budget;
+          if (insights.urgency) lead.urgency = insights.urgency;
+          if (insights.requirements) lead.requirements = insights.requirements;
+          
+          if (typeof insights.intentScore === 'number') {
+            lead.intentScore = Math.max(lead.intentScore || 0, insights.intentScore);
+          }
+          
+          if (insights.qualificationStatus && ['Unqualified', 'Qualified', 'Sales Ready'].includes(insights.qualificationStatus)) {
+            lead.qualificationStatus = insights.qualificationStatus;
+            
+            // Auto-update overarching lead pipeline status based on qualification
+            if (insights.qualificationStatus === 'Sales Ready' && lead.status !== 'Converted') {
+              lead.status = 'Interested';
+            } else if (insights.qualificationStatus === 'Qualified' && lead.status === 'New') {
+              lead.status = 'Qualified';
+            }
+          }
+          await lead.save();
+        }
+      } catch (err) {
+        console.error("Extraction error:", err);
+      }
+    }
+
+    // 11. Return valid TwiML Response
     return generateTwiMLResponse(aiResponse);
 
   } catch (error) {

@@ -13,30 +13,26 @@ type Message = {
 export async function generateSalesResponse(history: Message[], lead: ILead): Promise<string> {
   const systemPrompt: Message = {
     role: 'system',
-    content: `You are a professional AI sales and CRM assistant for a business automation platform.
+    content: `You are a professional AI sales assistant and Lead Conversion Agent for a business automation platform.
 
 Your responsibilities:
-- Talk naturally with users
-- Understand customer requirements
-- Qualify leads
-- Ask relevant follow-up questions
-- Maintain conversational context
-- Respond professionally and concisely
+- Talk naturally with users and maintain conversational context.
+- Understand customer requirements and subtly extract business information.
+- Qualify leads gradually (do not interrogate). Ask ONE meaningful question at a time.
+- Detect buying intent and assist with bookings/demo scheduling if they show high interest.
+- Keep responses short, concise, and natural (1-3 brief paragraphs max).
 
 Current Lead context:
 - Name: ${lead.name !== lead.phone ? lead.name : "Not provided yet"}
-- Status: ${lead.status}
-- Known Notes/Interest: ${lead.interest || lead.notes || "None"}
+- Status: ${lead.qualificationStatus || lead.status}
+- Known Info: Business (${lead.businessType || 'unknown'}), Budget (${lead.budget || 'unknown'}), Urgency (${lead.urgency || 'unknown'})
 
 Rules:
-- Never send random emojis
-- Never send images/media
-- Never repeat fallback messages continuously
-- Never hallucinate unsupported functionality
-- If input is unclear, ask politely for clarification once
-- Keep replies under 2-3 short paragraphs
-- Avoid robotic repetition
-- Maintain business-professional tone.`
+- NO random emojis. NO media generation.
+- NEVER repeat fallback messages continuously.
+- Avoid robotic, scripted conversations.
+- If they ask to book a call, offer to help them schedule a time.
+- Maintain a business-professional yet approachable tone.`
   };
 
   const messages = [systemPrompt, ...history.map(msg => ({ role: msg.role, content: msg.content }))] as any;
@@ -45,22 +41,17 @@ Rules:
     const chatCompletion = await groq.chat.completions.create({
       messages: messages,
       model: "llama-3.3-70b-versatile",
-      temperature: 0.6, // lowered slightly for stability
+      temperature: 0.7,
       max_tokens: 300,
     });
 
     let content = chatCompletion.choices[0]?.message?.content || "";
     
     // AI Response Sanitization
-    content = content.replace(/\*\*/g, ''); // Remove bold markdown
-    content = content.replace(/\*/g, ''); // Remove italics markdown
-    content = content.replace(/!\[.*?\]\(.*?\)/g, ''); // Remove markdown images
-    
-    // Simple deduplication/trimming of extra spacing
+    content = content.replace(/\*\*/g, '');
+    content = content.replace(/\*/g, '');
+    content = content.replace(/!\[.*?\]\(.*?\)/g, '');
     content = content.trim().replace(/\n{3,}/g, '\n\n');
-    
-    // Remove excessive emojis (basic regex for most emojis, simplified approach is just relying on prompt)
-    // The prompt is very strict on "Never send random emojis", which usually suffices.
 
     if (!content) {
       return "Sorry, I’m facing a temporary issue right now. Please try again in a moment.";
@@ -70,5 +61,55 @@ Rules:
   } catch (error) {
     console.error("Error generating AI response:", error);
     return "Sorry, I’m facing a temporary issue right now. Please try again in a moment.";
+  }
+}
+
+export async function extractLeadInsights(history: Message[], currentInsights: any = {}): Promise<any> {
+  const systemPrompt: Message = {
+    role: 'system',
+    content: `You are an AI data extraction engine.
+Analyze the following conversation between a user and an AI sales assistant.
+Extract or update the following business information based strictly on the user's messages.
+If information is not explicitly mentioned, retain the current value or output null.
+
+Output ONLY valid JSON matching this schema:
+{
+  "businessType": string | null,
+  "budget": string | null,
+  "urgency": string | null,
+  "requirements": string | null,
+  "intentScore": number (0-100),
+  "qualificationStatus": "Unqualified" | "Qualified" | "Sales Ready"
+}
+
+Scoring rules:
+- Mentions budget -> +15 intent
+- Urgent -> +20 intent
+- Asks for pricing/demo -> +25 intent
+- Negative response -> decrease intent
+
+Current Insights: ${JSON.stringify(currentInsights)}
+`
+  };
+
+  const messages = [
+    systemPrompt, 
+    { role: 'user', content: JSON.stringify(history.map(h => ({ role: h.role, text: h.content }))) }
+  ] as any;
+
+  try {
+    const chatCompletion = await groq.chat.completions.create({
+      messages: messages,
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.1, // Strict factual extraction
+      response_format: { type: 'json_object' }
+    });
+
+    const output = chatCompletion.choices[0]?.message?.content || "{}";
+    const insights = JSON.parse(output);
+    return insights;
+  } catch (error) {
+    console.error("Error extracting AI insights:", error);
+    return null;
   }
 }

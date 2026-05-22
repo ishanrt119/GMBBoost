@@ -12,6 +12,9 @@ export interface IConversation extends Document {
   aiProcessed?: boolean;
   failedReason?: string;
   duplicateEvent?: boolean;
+
+  aiSummary?: string;
+  extractedInsights?: any;
 }
 
 const ConversationSchema: Schema = new Schema(
@@ -27,6 +30,9 @@ const ConversationSchema: Schema = new Schema(
     aiProcessed: { type: Boolean, default: false },
     failedReason: { type: String },
     duplicateEvent: { type: Boolean, default: false },
+
+    aiSummary: { type: String },
+    extractedInsights: { type: Schema.Types.Mixed }
   },
   { timestamps: false }
 );
