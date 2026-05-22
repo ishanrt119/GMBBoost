@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
   Search,
@@ -10,7 +11,8 @@ import {
   Clock,
   MoreVertical,
   Users,
-  Loader2
+  Loader2,
+  MessageCircle
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -76,10 +78,16 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold mb-2 text-white">Dashboard Overview</h1>
           <p className="text-white/40">Here's what's happening with your business profiles across MongoDB.</p>
         </div>
-        <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]">
-          <Search className="w-4 h-4" />
-          Run AI GMB Audit
-        </button>
+        <div className="flex gap-4">
+          <Link href="/crm" className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)]">
+            <MessageCircle className="w-4 h-4" />
+            AI WhatsApp CRM
+          </Link>
+          <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]">
+            <Search className="w-4 h-4" />
+            Run AI GMB Audit
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -115,7 +123,7 @@ export default function Dashboard() {
         <div className="lg:col-span-8 glass-dark rounded-[32px] border border-white/10 p-8">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold text-white">Recent Leads (MongoDB)</h3>
-            <button className="text-primary text-sm font-bold hover:underline">View Pipeline</button>
+            <Link href="/crm" className="text-primary text-sm font-bold hover:underline">View Pipeline</Link>
           </div>
           <div className="space-y-4">
             {data.leads.length === 0 ? (
