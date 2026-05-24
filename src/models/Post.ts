@@ -1,24 +1,40 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPost extends Document {
+  title?: string;
   businessId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId;
   content: string;
   media: string[];
-  scheduledDate: Date;
+  imageUrl?: string;
+  platform: string;
   status: string;
   aiGenerated: boolean;
+  generationPrompt?: string;
+  scheduledDate?: Date;
+  publishedAt?: Date;
+  failureReason?: string;
+  retryCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const PostSchema: Schema = new Schema(
   {
+    title: { type: String },
     businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: true },
     media: [{ type: String }],
-    scheduledDate: { type: Date },
-    status: { type: String, enum: ['draft', 'scheduled', 'published', 'failed'], default: 'draft', index: true },
+    imageUrl: { type: String },
+    platform: { type: String, default: 'gmb' },
+    status: { type: String, enum: ['draft', 'pending_approval', 'approved', 'rejected', 'scheduled', 'published', 'failed', 'archived'], default: 'draft', index: true },
     aiGenerated: { type: Boolean, default: false },
+    generationPrompt: { type: String },
+    scheduledDate: { type: Date },
+    publishedAt: { type: Date },
+    failureReason: { type: String },
+    retryCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

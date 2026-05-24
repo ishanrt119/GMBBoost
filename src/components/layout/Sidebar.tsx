@@ -22,6 +22,10 @@ const sidebarLinks = [
   { name: "AI Content", icon: Calendar, href: "/dashboard/content" },
   { name: "Review Manager", icon: MessageSquare, href: "/dashboard/reviews" },
   { name: "Lead Agent", icon: Users, href: "/dashboard/leads" },
+  { name: "My Posts", icon: Calendar, href: "/dashboard/posts" },
+  { name: "Create Post", icon: Calendar, href: "/dashboard/posts/create" },
+  { name: "Pending Posts", icon: Calendar, href: "/dashboard/posts/pending" },
+  { name: "Scheduled Posts", icon: Calendar, href: "/dashboard/posts/scheduled" },
   { name: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   { name: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];

@@ -1,32 +1,41 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Post from "@/models/Post";
+import Business from "@/models/Business";
+import { generatePost } from "@/services/ai";
 
-export const dynamic = "force-dynamic";
-
-export async function GET(request: Request) {
+export async function GET(req: Request) {
   try {
     await dbConnect();
-    const { searchParams } = new URL(request.url);
-    const businessId = searchParams.get("businessId");
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
     
-    let query = {};
-    if (businessId) query = { businessId };
-    
-    const posts = await Post.find(query).sort({ scheduledDate: -1, createdAt: -1 });
+    // Default to user ID 1 or a specific ID if auth is not fully set up in Next.js yet
+    // In production, this should use NextAuth session
+    const filter: any = {};
+    if (status) filter.status = status;
+
+    const posts = await Post.find(filter).sort({ createdAt: -1 });
     return NextResponse.json(posts);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
     await dbConnect();
-    const body = await request.json();
-    const post = await Post.create(body);
-    return NextResponse.json(post, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    const body = await req.json();
+
+    const newPost = await Post.create({
+      ...body,
+      status: body.status || "PENDING_APPROVAL",
+    });
+
+    return NextResponse.json({ message: "Post created successfully", post: newPost }, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
