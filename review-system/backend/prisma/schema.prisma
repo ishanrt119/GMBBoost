@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id            String   @id @default(cuid())
+  name          String
+  googlePlaceId String?
+  reviewLink    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users      User[]
+  customers  Customer[]
+  campaigns  Campaign[]
+
+  @@map("businesses")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  businessId   String
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  createdAt    DateTime @default(now())
+
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  businessId  String
+  firstName   String
+  lastName    String?
+  phone       String?
+  email       String?
+  service     String?
+  visitDate   DateTime?
+  channel     Channel   @default(WHATSAPP)
+  source      Source    @default(MANUAL)
+  isDuplicate Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  requests ReviewRequest[]
+
+  @@index([businessId])
+  @@map("customers")
+}
+
+enum Channel {
+  WHATSAPP
+  EMAIL
+  SMS
+}
+
+enum Source {
+  CSV
+  MANUAL
+  CRM_HUBSPOT
+  CRM_SALESFORCE
+  CRM_ZOHO
+}
+
+model Campaign {
+  id               String         @id @default(cuid())
+  businessId       String
+  name             String
+  channel          Channel
+  status           CampaignStatus @default(DRAFT)
+  day2Reminder     Boolean        @default(true)
+  day5Reminder     Boolean        @default(true)
+  stopOnReview     Boolean        @default(true)
+  sendOnlyBizHours Boolean        @default(true)
+  scheduledAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  requests ReviewRequest[]
+
+  @@index([businessId])
+  @@map("campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model ReviewRequest {
+  id              String        @id @default(cuid())
+  campaignId      String
+  customerId      String
+  channel         Channel
+  status          RequestStatus @default(QUEUED)
+  sentAt          DateTime?
+  clickedAt       DateTime?
+  reviewedAt      DateTime?
+  failedAt        DateTime?
+  failReason      String?
+  reminder1SentAt DateTime?
+  reminder2SentAt DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  review   Review?
+
+  @@index([campaignId])
+  @@index([status])
+  @@map("review_requests")
+}
+
+enum RequestStatus {
+  QUEUED
+  SENT
+  CLICKED
+  REVIEWED
+  FAILED
+  UNSUBSCRIBED
+}
+
+model Review {
+  id        String    @id @default(cuid())
+  requestId String    @unique
+  rating    Int
+  text      String?
+  postedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  request ReviewRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}

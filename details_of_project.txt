@@ -1,0 +1,142 @@
+Project Name:  Module 9 — Customer Upload & Review Generation System
+Location:      C:\Users\Samarth Gawade\OneDrive\Desktop\review-system-groq\review-system
+
+How to Start Every Time
+Terminal 1 — Backend
+bashcd "C:\Users\Samarth Gawade\OneDrive\Desktop\review-system-groq\review-system\backend"
+npm run dev
+Runs on → http://localhost:4000
+Terminal 2 — Frontend
+bashcd "C:\Users\Samarth Gawade\OneDrive\Desktop\review-system-groq\review-system\frontend"
+npm run dev
+Runs on → http://localhost:3000
+Open Browser
+http://localhost:3000
+
+Login Details
+Email:    admin@glamour.com
+Password: Admin@1234
+
+Database Details
+Type:      PostgreSQL 16
+Host:      localhost
+Port:      5432
+DB Name:   review_db
+User:      postgres
+Password:  your PostgreSQL password
+
+All API Keys Used
+Groq AI
+Key:      GROQ_API_KEY=gsk_...
+Model:    llama-3.3-70b-versatile
+Get key:  https://console.groq.com/keys
+Free:     ✅ Yes
+
+SendGrid Email
+Key:      SENDGRID_API_KEY=SG....
+From:     EMAIL_FROM=your@email.com
+Name:     EMAIL_FROM_NAME=Glamour Salon & Spa
+Get key:  https://app.sendgrid.com/settings/api_keys
+Free:     ✅ 100 emails/day
+
+Twilio SMS
+SID:      TWILIO_ACCOUNT_SID=AC...
+Token:    TWILIO_AUTH_TOKEN=...
+Number:   TWILIO_FROM_NUMBER=+1...
+Get key:  https://console.twilio.com
+Free:     ✅ $15 free credit
+
+
+WhatsApp
+Status:   ⏳ Pending — needs Facebook account
+Get key:  https://developers.facebook.com
+Free:     ✅ Yes
+
+Complete .env File Structure
+# DATABASE
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/review_db"
+
+# SERVER
+PORT=4000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:4000
+
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=15m
+REFRESH_TOKEN_SECRET=your_refresh_secret
+REFRESH_TOKEN_EXPIRES_IN=7d
+
+# GROQ AI
+GROQ_API_KEY=gsk_...
+
+# WHATSAPP
+WHATSAPP_TOKEN=your_token
+WHATSAPP_PHONE_NUMBER_ID=your_id
+
+# SENDGRID EMAIL
+SENDGRID_API_KEY=SG....
+EMAIL_FROM=your@email.com
+EMAIL_FROM_NAME=Glamour Salon & Spa
+
+# TWILIO SMS
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
+TWILIO_FROM_NUMBER=+1...
+
+# GOOGLE
+GOOGLE_API_KEY=AIza...
+
+Project Structure
+review-system/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── auth.controller.js
+│   │   │   ├── customer.controller.js
+│   │   │   ├── campaign.controller.js
+│   │   │   ├── review.controller.js
+│   │   │   ├── ai.controller.js
+│   │   │   └── dashboard.controller.js
+│   │   ├── routes/
+│   │   │   ├── auth.routes.js
+│   │   │   ├── customer.routes.js
+│   │   │   ├── campaign.routes.js
+│   │   │   ├── review.routes.js
+│   │   │   ├── ai.routes.js
+│   │   │   └── dashboard.routes.js
+│   │   ├── services/
+│   │   │   ├── whatsapp.service.js
+│   │   │   ├── email.service.js
+│   │   │   ├── sms.service.js
+│   │   │   └── autopoll.service.js  ← NEW
+│   │   ├── middleware/
+│   │   │   └── auth.middleware.js
+│   │   ├── utils/
+│   │   │   ├── prisma.js
+│   │   │   └── logger.js
+│   │   └── index.js
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── seed.js
+│   ├── .env
+│   └── package.json
+│
+└── frontend/
+    ├── src/
+    │   ├── app/
+    │   │   ├── login/page.js
+    │   │   ├── dashboard/page.js
+    │   │   ├── upload/page.js
+    │   │   ├── campaigns/page.js  ← UPDATED
+    │   │   ├── reviews/page.js
+    │   │   ├── ai/page.js         ← UPDATED
+    │   │   └── settings/page.js
+    │   ├── components/
+    │   │   └── AppLayout.js       ← NEW
+    │   └── lib/
+    │       └── api.js
+    ├── jsconfig.json              ← NEW
+    ├── .env.local
+    └── package.json
