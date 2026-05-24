@@ -21,7 +21,7 @@ const sidebarLinks = [
   { name: "AI Audits", icon: Zap, href: "/dashboard/audit" },
   { name: "AI Content", icon: Calendar, href: "/dashboard/content" },
   { name: "Review Manager", icon: MessageSquare, href: "/dashboard/reviews" },
-  { name: "Lead Agent", icon: Users, href: "/dashboard/leads" },
+  { name: "WhatsApp CRM", icon: Users, href: "/crm" },
   { name: "My Posts", icon: Calendar, href: "/dashboard/posts" },
   { name: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   { name: "Settings", icon: Settings, href: "/dashboard/settings" },

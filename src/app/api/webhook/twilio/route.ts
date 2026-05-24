@@ -3,7 +3,9 @@ import twilio from 'twilio';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Conversation from '@/models/Conversation';
+import Appointment from '@/models/Appointment';
 import { generateSalesResponse, extractLeadInsights } from '@/services/ai';
+import axios from 'axios';
 
 const { MessagingResponse } = twilio.twiml;
 
@@ -158,13 +160,104 @@ export async function POST(req: NextRequest) {
     // Update lead session state
     lead.lastUserMessage = body;
     lead.lastAIReply = aiResponse;
+    
+    // --- TAG PARSING & SIDE EFFECTS ---
+    let cleanReply = aiResponse;
+
+    // 1. Handle NAME_RECEIVED tag
+    const nameMatch = aiResponse.match(/NAME_RECEIVED::name=(.+?)(?:\n|$)/);
+    if (nameMatch) {
+      const name = nameMatch[1].trim();
+      if (name && name.length >= 2 && name !== '<name>') {
+        if (lead.name === lead.phone) {
+          lead.name = name;
+        }
+      }
+    }
+
+    // 2. Handle LEAD_CAPTURED tag
+    const leadMatch = aiResponse.match(/LEAD_CAPTURED::name=(.+?)\|\|interest=(.+?)(?:\n|$)/);
+    if (leadMatch) {
+      const name = leadMatch[1].trim();
+      const interest = leadMatch[2].trim();
+      if (lead.name === lead.phone) lead.name = name;
+      if (interest && interest !== '<interest>') lead.interest = interest;
+      
+      // Trigger n8n webhook for follow up
+      const n8nUrl = process.env.N8N_WEBHOOK_URL;
+      if (n8nUrl) {
+        axios.post(n8nUrl, {
+          event: 'FOLLOW_UP',
+          phone: lead.phone,
+          name: lead.name,
+          interest: lead.interest,
+          source: 'WhatsApp',
+          timestamp: new Date()
+        }).catch(err => console.error("N8N Webhook Follow-up Error:", err.message));
+      }
+    }
+
+    // 3. Handle INTEREST_UPDATED tag
+    const interestMatch = aiResponse.match(/INTEREST_UPDATED::interest=(.+?)(?:\n|$)/);
+    if (interestMatch) {
+      const interest = interestMatch[1].trim();
+      if (interest && interest !== '<interest>') {
+        lead.interest = interest;
+      }
+    }
+
+    // 4. Handle BOOKING_CONFIRMED tag
+    const bookingMatch = aiResponse.match(/BOOKING_CONFIRMED::name=(.+?)\|\|date=(.+?)\|\|time=(.+?)(?:\n|$)/);
+    if (bookingMatch) {
+      const bName = bookingMatch[1].trim();
+      const bDate = bookingMatch[2].trim();
+      const bTime = bookingMatch[3].trim();
+      const bookingDate = new Date(`${bDate} ${bTime}`);
+      const now = new Date();
+
+      if (bookingDate <= now) {
+        cleanReply = 'Please note that the date is in the past, ask for a future date';
+      } else {
+        await Appointment.create({
+          leadId: lead._id,
+          date: bDate,
+          time: bTime,
+          status: 'Scheduled'
+        });
+        lead.status = 'Booking Pending';
+      }
+    }
+
+    // 5. Handle HUMAN_HANDOFF tag
+    const handoffMatch = aiResponse.match(/HUMAN_HANDOFF/);
+    if (handoffMatch) {
+      const n8nUrl = process.env.N8N_WEBHOOK_URL;
+      if (n8nUrl) {
+        axios.post(n8nUrl, {
+          event: 'HUMAN_HANDOFF',
+          phone: lead.phone,
+          conversationHistory: aiContext,
+          timestamp: new Date()
+        }).catch(err => console.error("N8N Webhook Handoff Error:", err.message));
+      }
+    }
+
+    // Strip tags from clean reply
+    cleanReply = cleanReply
+      .replace(/NAME_RECEIVED::.+/g, '')
+      .replace(/LEAD_CAPTURED::.+/g, '')
+      .replace(/INTEREST_UPDATED::.+/g, '')
+      .replace(/BOOKING_CONFIRMED::.+/g, '')
+      .replace(/HUMAN_HANDOFF/g, '')
+      .trim();
+
     await lead.save();
 
     // 9. Save AI response to DB
     await Conversation.create({
       leadId: lead._id,
       sender: aiResponse === FALLBACK_MESSAGE ? 'system' : 'ai',
-      message: aiResponse,
+      message: cleanReply,
       aiGenerated: true,
       messageType: 'text',
       aiProcessed: true
@@ -215,7 +308,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 11. Return valid TwiML Response
-    return generateTwiMLResponse(aiResponse);
+    return generateTwiMLResponse(cleanReply);
 
   } catch (error) {
     console.error('Critical Webhook error:', error);
