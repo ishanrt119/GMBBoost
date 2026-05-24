@@ -9,7 +9,9 @@ export interface IReview extends Document {
   sentiment: string;
   response: string;
   aiSuggestedReply?: string;
-  replyStatus?: 'PENDING' | 'POSTED' | 'FAILED';
+  replyStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'POSTED' | 'FAILED';
+  replyTone?: string;
+  sourcePlatform?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,10 +23,12 @@ const ReviewSchema: Schema = new Schema(
     reviewer: { type: String, required: true },
     rating: { type: Number, required: true },
     reviewText: { type: String },
-    sentiment: { type: String, enum: ['positive', 'neutral', 'negative'] },
+    sentiment: { type: String, enum: ['positive', 'neutral', 'negative', 'critical'] },
     response: { type: String },
     aiSuggestedReply: { type: String },
-    replyStatus: { type: String, enum: ['PENDING', 'POSTED', 'FAILED'], default: 'PENDING' },
+    replyStatus: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'POSTED', 'FAILED'], default: 'PENDING' },
+    replyTone: { type: String },
+    sourcePlatform: { type: String, default: 'Google' },
   },
   { timestamps: true }
 );

@@ -1,30 +1,90 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Star, Loader2 } from 'lucide-react';
+import { Star, Loader2, Edit3, CheckCircle, RefreshCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState([]);
-  const [stats,   setStats]   = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [r, s] = await Promise.all([api.get('/reviews'), api.get('/reviews/analytics?businessId=6651234567890abcdef12345')]);
+      setReviews(r.data.reviews || r.data || []);
+      setStats(s.data.analytics || null);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // In our new architecture we have /api/reviews and /api/reviews/analytics
-    Promise.all([api.get('/reviews'), api.get('/reviews/analytics')])
-      .then(([r, s]) => { 
-        setReviews(r.data.reviews || r.data || []); 
-        setStats(s.data.analytics || null); 
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    fetchData();
   }, []);
+
+  const triggerMonitor = async () => {
+    const toastId = toast.loading('Polling for new reviews...');
+    try {
+      // Mocking a business ID, in real app it would come from context
+      await api.post('/reviews/monitor?businessId=6651234567890abcdef12345');
+      toast.success('Monitoring job completed!', { id: toastId });
+      fetchData();
+    } catch (err) {
+      toast.error('Monitoring failed.', { id: toastId });
+    }
+  };
+
+  const startEditing = (r) => {
+    setEditingId(r._id || r.id);
+    setEditText(r.aiSuggestedReply || '');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const approveReply = async (id, updatedText = null) => {
+    const toastId = toast.loading('Approving reply...');
+    try {
+      await api.post(`/reviews/${id}/approve-reply`, { aiSuggestedReply: updatedText });
+      toast.success('Reply approved! Ready to post.', { id: toastId });
+      setEditingId(null);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to approve reply.', { id: toastId });
+    }
+  };
+
+  const postReply = async (id) => {
+    const toastId = toast.loading('Posting reply to Google...');
+    try {
+      await api.post(`/reviews/${id}/post-reply`);
+      toast.success('Reply posted successfully!', { id: toastId });
+      fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Failed to post reply.', { id: toastId });
+    }
+  };
 
   return (
     <div className="w-full pb-10">
       <div className="max-w-6xl mx-auto space-y-10">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-white">Reviews Tracker</h1>
-          <p className="text-white/40">All collected Google reviews across campaigns</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 text-white">Reviews Tracker</h1>
+            <p className="text-white/40">Monitor, edit, and approve AI replies for Google reviews</p>
+          </div>
+          <button onClick={triggerMonitor} className="flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm">
+            <RefreshCcw size={16} /> Poll New Reviews
+          </button>
         </div>
 
         {loading ? (
@@ -34,71 +94,114 @@ export default function ReviewsPage() {
         ) : (
           <>
             {/* Stat cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm">
                 <div className="text-3xl font-bold text-white">{stats?.totalReviews || reviews.length || 0}</div>
                 <div className="text-xs text-white/40 mt-2 font-medium">Total Reviews</div>
               </div>
               <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm">
-                <div className="text-3xl font-bold text-primary">{stats?.totalRequests || 0}</div>
-                <div className="text-xs text-white/40 mt-2 font-medium">Total Requests</div>
+                <div className="text-3xl font-bold text-yellow-500">{reviews.filter(r => r.replyStatus === 'PENDING').length}</div>
+                <div className="text-xs text-white/40 mt-2 font-medium">Pending AI Replies</div>
               </div>
               <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm">
-                <div className="text-3xl font-bold text-purple-400">{stats?.clickedRequests || 0}</div>
-                <div className="text-xs text-white/40 mt-2 font-medium">Total Clicks</div>
+                <div className="text-3xl font-bold text-green-400">{reviews.filter(r => r.replyStatus === 'APPROVED').length}</div>
+                <div className="text-xs text-white/40 mt-2 font-medium">Ready to Post</div>
               </div>
-              
-              {/* If we have specific breakdown we can show them, else show general stats */}
-              <div className="glass-dark border border-white/10 rounded-2xl p-6 mb-4 flex flex-col justify-center items-center shadow-sm lg:col-span-3">
-                <div className="text-5xl font-black text-yellow-500">{stats?.averageRating || 0}</div>
-                <div className="text-yellow-500 text-lg mt-1 tracking-widest">
-                  {'★'.repeat(Math.round(stats?.averageRating || 0))}
-                </div>
+              <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm flex flex-col justify-center items-center">
+                <div className="text-4xl font-black text-yellow-500">{stats?.averageRating || 0}</div>
                 <div className="text-xs text-white/40 mt-2 font-medium">Average Google Rating</div>
               </div>
             </div>
 
-            {/* Reviews table */}
-            <div className="glass-dark border border-white/10 rounded-[24px] overflow-hidden shadow-sm">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 bg-white/5">
-                    {['Customer', 'Rating', 'Review', 'Date', 'Status'].map((h) => (
-                      <th key={h} className="text-left px-6 py-4 text-xs text-white/60 font-medium">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {reviews.map((r) => (
-                    <tr key={r._id || r.id} className="border-b border-white/5 hover:bg-white/5 transition-all">
-                      <td className="px-6 py-4 font-bold text-white">
-                        {r.reviewer || (r.customer ? `${r.customer.firstName} ${r.customer.lastName || ''}` : 'Unknown')}
-                      </td>
-                      <td className="px-6 py-4 text-yellow-500 text-lg">
-                        {'★'.repeat(r.rating || 0)}
-                      </td>
-                      <td className="px-6 py-4 text-white/60 text-sm max-w-md truncate">
-                        {r.reviewText || r.text || '—'}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-white/40 font-medium">
-                        {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-[10px] font-bold">
-                           LIVE
+            {/* Reviews list */}
+            <div className="space-y-4">
+              {reviews.map((r) => {
+                const id = r._id || r.id;
+                const isEditing = editingId === id;
+                return (
+                  <div key={id} className="glass-dark border border-white/10 rounded-[24px] p-6 shadow-sm flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-lg text-white mb-1">
+                          {r.reviewer || (r.customer ? `${r.customer.firstName} ${r.customer.lastName || ''}` : 'Unknown')}
+                        </h3>
+                        <div className="flex items-center gap-3">
+                          <span className="text-yellow-500 text-lg tracking-widest">{'★'.repeat(r.rating || 0)}</span>
+                          <span className="text-xs text-white/40 font-medium">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</span>
+                          {r.sentiment && (
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${r.sentiment === 'positive' ? 'bg-green-500/10 text-green-400' : r.sentiment === 'negative' || r.sentiment === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-400'}`}>
+                              {r.sentiment}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${r.replyStatus === 'APPROVED' ? 'bg-green-500/10 text-green-400' : r.replyStatus === 'POSTED' ? 'bg-blue-500/10 text-blue-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                          {r.replyStatus || 'PENDING'}
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {!reviews.length && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-white/40 text-sm">
-                        No reviews tracked yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+
+                    <p className="text-white/70 text-sm leading-relaxed">
+                      {r.reviewText || r.text || <span className="italic text-white/30">No review text provided.</span>}
+                    </p>
+
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-xs font-bold text-primary tracking-wide">AI SUGGESTED REPLY</p>
+                      </div>
+
+                      {isEditing ? (
+                        <div className="flex flex-col gap-3">
+                          <textarea
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            rows={3}
+                            className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm text-white outline-none focus:border-primary transition-all resize-none"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={cancelEdit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-white/60 hover:text-white transition-all">
+                              Cancel
+                            </button>
+                            <button onClick={() => approveReply(id, editText)} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                              Save & Approve
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          <p className="text-sm text-white/80 leading-relaxed">
+                            {r.aiSuggestedReply || <span className="italic text-white/30">No AI reply generated yet.</span>}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            {r.replyStatus === 'PENDING' && (
+                              <>
+                                <button onClick={() => startEditing(r)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-white hover:bg-white/10 transition-all">
+                                  <Edit3 size={14} /> Edit
+                                </button>
+                                <button onClick={() => approveReply(id)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-all">
+                                  <CheckCircle size={14} /> Approve
+                                </button>
+                              </>
+                            )}
+                            {r.replyStatus === 'APPROVED' && (
+                              <button onClick={() => postReply(id)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                                Post to Google
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {!reviews.length && (
+                <div className="glass-dark border border-white/10 rounded-[24px] p-12 text-center text-white/40 text-sm">
+                  No reviews tracked yet.
+                </div>
+              )}
             </div>
           </>
         )}

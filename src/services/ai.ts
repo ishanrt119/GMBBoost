@@ -293,3 +293,77 @@ Return only the message text.`;
     return null;
   }
 }
+
+export async function generateAIReply(reviewText: string, rating: number, reviewerName: string, tone: string = 'Professional'): Promise<string> {
+  try {
+    const prompt = `You are a professional customer service representative for a business.
+Generate a polite, empathetic and professional reply to the following customer review.
+
+Reviewer: ${reviewerName}
+Rating: ${rating}/5
+Review: ${reviewText || 'No text provided'}
+Tone: ${tone}
+
+Guidelines:
+- Keep the reply under 80 words
+- Be professional and friendly
+- Address the specific points mentioned
+- If rating is low (1-3), apologize and offer to improve
+- If rating is high (4-5), thank them warmly
+- Do not use generic, robotic responses
+- Tone specific instructions:
+  - Professional: Formal, polite, and brand-safe.
+  - Friendly: Warm, engaging, use 1-2 emojis.
+  - Apology: Empathetic, sincere, focused on resolving the issue.
+
+Reply:`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 150,
+    });
+
+    return completion.choices[0]?.message?.content?.trim() || `Thank you for your feedback, ${reviewerName}. We truly value your thoughts and will use them to improve our services.`;
+  } catch (error) {
+    console.error('AI Reply generation error', error);
+    return `Thank you for your feedback, ${reviewerName}. We truly value your thoughts and will use them to improve our services.`;
+  }
+}
+
+export async function analyzeSentiment(reviewText: string, rating: number): Promise<string> {
+  if (!reviewText) {
+    return rating >= 4 ? 'positive' : rating === 3 ? 'neutral' : 'negative';
+  }
+  try {
+    const prompt = `Analyze the sentiment of this customer review:
+"${reviewText}"
+Rating: ${rating}/5
+
+Categorize the sentiment as EXACTLY ONE of the following words:
+positive
+neutral
+negative
+critical
+
+(If it's extremely angry, threatening, or claims food poisoning/scam, label it "critical").
+Return ONLY the category word.`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1,
+      max_tokens: 10,
+    });
+
+    const sentiment = completion.choices[0]?.message?.content?.trim().toLowerCase() || 'neutral';
+    if (['positive', 'neutral', 'negative', 'critical'].includes(sentiment)) {
+      return sentiment;
+    }
+    return rating >= 4 ? 'positive' : rating === 3 ? 'neutral' : 'negative';
+  } catch (error) {
+    console.error('Sentiment analysis error', error);
+    return rating >= 4 ? 'positive' : rating === 3 ? 'neutral' : 'negative';
+  }
+}

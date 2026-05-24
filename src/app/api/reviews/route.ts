@@ -9,9 +9,13 @@ export async function GET(request: Request) {
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get("businessId");
+    const replyStatus = searchParams.get("replyStatus");
+    const sentiment = searchParams.get("sentiment");
     
-    let query = {};
-    if (businessId) query = { businessId };
+    let query: any = {};
+    if (businessId) query.businessId = businessId;
+    if (replyStatus) query.replyStatus = replyStatus;
+    if (sentiment) query.sentiment = sentiment;
     
     const reviews = await Review.find(query).sort({ createdAt: -1 }).populate('businessId', 'name');
     return NextResponse.json(reviews);
