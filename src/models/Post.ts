@@ -11,6 +11,13 @@ export interface IPost extends Document {
   status: string;
   aiGenerated: boolean;
   generationPrompt?: string;
+  keywords?: string[];
+  location?: string;
+  tone?: string;
+  contentType?: string;
+  hashtags?: string[];
+  cta?: string;
+  seoScore?: number;
   scheduledDate?: Date;
   publishedAt?: Date;
   failureReason?: string;
@@ -31,6 +38,13 @@ const PostSchema: Schema = new Schema(
     status: { type: String, enum: ['draft', 'pending_approval', 'approved', 'rejected', 'scheduled', 'published', 'failed', 'archived'], default: 'draft', index: true },
     aiGenerated: { type: Boolean, default: false },
     generationPrompt: { type: String },
+    keywords: [{ type: String }],
+    location: { type: String },
+    tone: { type: String },
+    contentType: { type: String },
+    hashtags: [{ type: String }],
+    cta: { type: String },
+    seoScore: { type: Number },
     scheduledDate: { type: Date },
     publishedAt: { type: Date },
     failureReason: { type: String },

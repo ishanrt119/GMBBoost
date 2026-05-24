@@ -63,49 +63,9 @@ console.log(error);
 
 };
 
-return(
-
-<div>
-
-<div
-className="
-flex
-justify-between
-items-center
-mb-10
-"
->
-
-<div>
-
-<h1
-className="
-text-4xl
-font-bold
-text-white
-"
->
-
-Scheduled Posts
-
-</h1>
-
-<p
-className="
-text-white/60
-mt-2
-"
->
-
-Manage your scheduled content
-
-</p>
-
-</div>
-
-</div>
-
-{
+return (
+  <div>
+    {
 posts.length === 0 ? (
 
 <div

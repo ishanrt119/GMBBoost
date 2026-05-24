@@ -1,7 +1,8 @@
 "use client";
 import {
 useEffect,
-useState
+useState,
+Suspense
 }
 from "react";
 
@@ -15,7 +16,7 @@ from "next/navigation";
 import API
 from "@/services/api";
 
-function CreatePost() {
+function CreatePostContent() {
 
 const router =
 useRouter();
@@ -246,25 +247,7 @@ Loading...
 }
 
 return(
-
 <div>
-
-<h1
-className="
-text-4xl
-font-bold
-text-white
-mb-8
-"
->
-
-{
-postId
-? "Edit Post"
-: "Create Post"
-}
-
-</h1>
 
 <form
 onSubmit={handleSubmit}
@@ -456,4 +439,10 @@ aiLoading
 
 }
 
-export default CreatePost;
+export default function CreatePost() {
+  return (
+    <Suspense fallback={<div className="p-10 text-white">Loading post data...</div>}>
+      <CreatePostContent />
+    </Suspense>
+  );
+}

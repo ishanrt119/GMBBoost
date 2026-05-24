@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Conversation from '@/models/Conversation';
 
-export async function GET(req: NextRequest, { params }: { params: { leadId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ leadId: string }> }) {
   try {
     await dbConnect();
     const resolvedParams = await params;

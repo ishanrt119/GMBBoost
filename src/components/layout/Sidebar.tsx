@@ -23,9 +23,6 @@ const sidebarLinks = [
   { name: "Review Manager", icon: MessageSquare, href: "/dashboard/reviews" },
   { name: "Lead Agent", icon: Users, href: "/dashboard/leads" },
   { name: "My Posts", icon: Calendar, href: "/dashboard/posts" },
-  { name: "Create Post", icon: Calendar, href: "/dashboard/posts/create" },
-  { name: "Pending Posts", icon: Calendar, href: "/dashboard/posts/pending" },
-  { name: "Scheduled Posts", icon: Calendar, href: "/dashboard/posts/scheduled" },
   { name: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   { name: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
@@ -34,7 +31,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r border-white/5 bg-black/20 backdrop-blur-xl flex flex-col hidden lg:flex h-screen sticky top-0">
+    <aside className="w-64 border-r border-white/5 bg-black/20 backdrop-blur-xl flex flex-col hidden lg:flex h-screen fixed top-0 left-0 z-50 overflow-y-auto custom-scrollbar">
       <div className="p-6">
         <Link href="/" className="flex items-center gap-2 mb-10 group">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] group-hover:rotate-12 transition-transform duration-300">

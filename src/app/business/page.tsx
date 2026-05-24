@@ -90,7 +90,7 @@ console.log(error);
 };
 
 const handleChange =
-(e)=>{
+(e: any)=>{
 
 setFormData({
 
@@ -104,7 +104,7 @@ e.target.value
 };
 
 const handleSubmit =
-async(e)=>{
+async(e: React.FormEvent)=>{
 
 e.preventDefault();
 
@@ -230,7 +230,7 @@ return(
 
 <div
 className="
-ml-64
+lg:ml-64
 w-full
 min-h-screen
 bg-slate-50
@@ -419,7 +419,7 @@ name="services"
 placeholder="Services"
 value={formData.services}
 onChange={handleChange}
-rows="5"
+rows={5}
 className="
 col-span-2
 p-4
@@ -436,7 +436,7 @@ name="offers"
 placeholder="Special Offers"
 value={formData.offers}
 onChange={handleChange}
-rows="4"
+rows={4}
 className="
 col-span-2
 p-4

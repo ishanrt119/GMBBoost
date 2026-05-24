@@ -9,13 +9,25 @@ export async function GET(req: Request) {
     await dbConnect();
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const aiGenerated = searchParams.get("aiGenerated");
+    const contentType = searchParams.get("contentType");
+    const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const skip = (page - 1) * limit;
     
-    // Default to user ID 1 or a specific ID if auth is not fully set up in Next.js yet
-    // In production, this should use NextAuth session
     const filter: any = {};
     if (status) filter.status = status;
+    if (aiGenerated === "true") filter.aiGenerated = true;
+    if (contentType) filter.contentType = contentType;
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { content: { $regex: search, $options: "i" } }
+      ];
+    }
 
-    const posts = await Post.find(filter).sort({ createdAt: -1 });
+    const posts = await Post.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit);
     return NextResponse.json(posts);
   } catch (error) {
     console.error(error);

@@ -68,68 +68,7 @@ function MyPosts() {
     };
 
   return (
-
     <div>
-
-        <div
-          className="
-          flex
-          justify-between
-          items-center
-          mb-10
-          "
-        >
-
-          <div>
-
-            <h1
-              className="
-              text-4xl font-bold text-white
-              "
-            >
-
-              My Posts
-
-            </h1>
-
-            <p
-              className="
-              text-white/60
-              mt-2
-              "
-            >
-
-              Manage all your content posts
-
-            </p>
-
-          </div>
-
-          <button
-            onClick={() =>
-              router.push("/create-post")
-            }
-            className="
-            px-6
-            py-3
-            rounded-2xl
-            text-white
-            font-semibold
-            bg-gradient-to-r
-            from-blue-600
-            to-purple-600
-            shadow-md
-            hover:scale-105
-            transition
-            "
-          >
-
-            + Create New
-
-          </button>
-
-        </div>
-
         {
 
           posts.length === 0 ? (

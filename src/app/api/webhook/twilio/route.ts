@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     const aiContext = ascendingHistory
       .filter(msg => msg.messageType === 'text' && msg.sender !== 'system')
       .map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
+        role: (msg.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
         content: msg.message
       }));
 
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
     // 10. Background or inline Extraction of CRM fields
     if (aiResponse !== FALLBACK_MESSAGE) {
       // Re-fetch or build history including the new messages
-      const updatedAiContext = [...aiContext, { role: 'assistant', content: aiResponse }];
+      const updatedAiContext = [...aiContext, { role: 'assistant' as const, content: aiResponse }];
       
       try {
         const insights = await extractLeadInsights(updatedAiContext, {
