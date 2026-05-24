@@ -226,3 +226,70 @@ Generate high-quality content now.
     return null;
   }
 }
+
+export async function generateReviewSuggestions(businessName: string, customerName: string, service: string, rating: number = 5): Promise<any[]> {
+  try {
+    const prompt = `You are helping a customer write a genuine Google review for a business.
+
+Business: ${businessName || 'the business'}
+Customer name: ${customerName || 'a customer'}
+Service received: ${service || 'general service'}
+Desired star rating: ${rating} out of 5
+
+Generate exactly 3 short, natural, authentic-sounding Google review drafts that the customer can edit and post.
+Each review should:
+- Sound like a real person wrote it (not AI)
+- Be 20-40 words
+- Mention the service if provided
+- Match the star rating in tone
+- Be unique in phrasing
+
+Return a JSON array like:
+[
+  { "rating": 5, "text": "..." },
+  { "rating": 5, "text": "..." },
+  { "rating": 4, "text": "..." }
+]
+Return ONLY the JSON array, no other text.`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+      max_tokens: 400,
+    });
+
+    const raw = completion.choices[0]?.message?.content?.trim() || "[]";
+    const json = raw.replace(/```json|```/g, '').trim();
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("Error generating review suggestions:", err);
+    return [];
+  }
+}
+
+export async function personalizeReviewMessage(businessName: string, customerName: string, service: string, channel: string = 'whatsapp'): Promise<string | null> {
+  try {
+    const prompt = `Write a short, friendly ${channel} message to ${customerName || 'the customer'} asking them to leave a Google review for ${businessName || 'our business'} after their ${service || 'recent visit'}.
+
+Rules:
+- Warm and personal, not salesy
+- Under 60 words
+- Include a placeholder {{review_link}} where the link goes
+- Use 1-2 emojis max
+- Do NOT include subject lines
+Return only the message text.`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 150,
+    });
+
+    return completion.choices[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error("Error personalizing message:", err);
+    return null;
+  }
+}
