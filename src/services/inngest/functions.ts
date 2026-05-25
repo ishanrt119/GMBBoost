@@ -12,7 +12,7 @@ import Customer from "@/models/Customer";
 import Campaign from "@/models/Campaign";
 import AutomationLog from "@/models/AutomationLog";
 import { generateSalesResponse } from "@/services/ai";
-import { generateGMBPost } from "@/services/content-ai";
+import { generateStructuredContent } from "@/services/content-ai";
 import twilio from "twilio";
 
 const FALLBACK_MESSAGE = "I'm having a little trouble connecting to my brain right now. Please hold on or call our main line!";
@@ -254,18 +254,33 @@ export const processContentJob = inngest.createFunction(
         nextDate.setDate(nextDate.getDate() + 1);
         lastScheduledDate = nextDate; // update for next iteration
 
-        const content = await generateGMBPost(business.niche || 'local business');
-        if (!content) throw new Error("Empty AI content");
+        // Deduplication context
+        const recentPosts = futurePosts.slice(-5).map((p: any) => p.content);
 
-        await Post.create({
-          title: `${business.name} Update`,
-          content,
+        const aiResponse = await generateStructuredContent({
+          business_name: business.name || 'Local Business',
+          business_type: business.category || 'Local Business',
+          location: business.address || 'Local Area',
+          keywords: business.keywords || [],
+          tone: 'professional',
+          content_type: 'gmb_post',
+          previous_posts: recentPosts
+        });
+        
+        if (!aiResponse) throw new Error("Empty AI content");
+
+        const newPost = await Post.create({
+          title: aiResponse.title || `${business.name} Update`,
+          content: aiResponse.content,
           status: "scheduled",
           platform: "gmb",
           aiGenerated: true,
           scheduledDate: nextDate,
           businessId: business._id,
         });
+
+        // Add to futurePosts to prevent repetition in the next loop iteration
+        futurePosts.push(newPost);
 
         await AutomationLog.create({
           type: 'ai_generation',
@@ -387,6 +402,64 @@ export const processReviewAutopollJob = inngest.createFunction(
         );
       }
     });
+    return { success: true };
+  }
+);
+
+// 6. Post Publishing Worker
+export const publishScheduledPostsCron = inngest.createFunction(
+  { id: "publish-scheduled-posts-cron" },
+  { cron: "*/15 * * * *" }, // Run every 15 minutes
+  async ({ step }) => {
+    const events = await step.run("fetch-posts-to-publish", async () => {
+      await dbConnect();
+      const { default: Post } = await import("@/models/Post");
+      const now = new Date();
+      const readyPosts = await Post.find({
+        status: "scheduled",
+        scheduledDate: { $lte: now }
+      }).lean();
+
+      return readyPosts.map((p: any) => ({
+        name: "scheduler/publish-post",
+        data: { postId: p._id.toString() }
+      }));
+    });
+
+    if (events.length > 0) {
+      await step.sendEvent("dispatch-publish-jobs", events);
+    }
+    return { success: true, dispatched: events.length };
+  }
+);
+
+export const processPublishPostJob = inngest.createFunction(
+  { id: "process-publish-post-job", retries: 3 },
+  { event: "scheduler/publish-post" },
+  async ({ event, step }) => {
+    const { postId } = event.data;
+    
+    await step.run("publish-to-gmb", async () => {
+      await dbConnect();
+      const { default: Post } = await import("@/models/Post");
+      const post = await Post.findById(postId);
+      if (!post || post.status !== "scheduled") return;
+
+      // Mock publishing to Google Business Profile API
+      console.log(`[MOCK] Publishing post to GMB for business ${post.businessId}: ${post.title}`);
+      
+      post.status = "published";
+      post.publishedAt = new Date();
+      await post.save();
+      
+      await AutomationLog.create({
+        type: 'api_publish',
+        workflow: 'content-scheduler',
+        action: 'publish_post',
+        status: 'success',
+      });
+    });
+    
     return { success: true };
   }
 );

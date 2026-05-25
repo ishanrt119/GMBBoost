@@ -113,9 +113,23 @@ function calculateReviewScore(data: any) {
 }
 
 function calculateSEOScore(data: any, keywords: string[]) {
-  return 85; 
+  let score = 50; // base score
+  if (data.website) score += 15;
+  if (keywords && keywords.length > 5) score += 20;
+  else if (keywords && keywords.length > 0) score += 10;
+  if (data.category && data.category !== "Uncategorized") score += 15;
+  return Math.min(score, 100);
 }
 
 function calculateEngagementScore(data: any) {
-  return 78;
+  let score = 40; // base score
+  const reviewCount = data.reviews || 0;
+  if (reviewCount > 100) score += 30;
+  else if (reviewCount > 20) score += 20;
+  else if (reviewCount > 0) score += 10;
+  
+  if (data.photos && data.photos.length > 10) score += 30;
+  else if (data.photos && data.photos.length > 0) score += 15;
+  
+  return Math.min(score, 100);
 }

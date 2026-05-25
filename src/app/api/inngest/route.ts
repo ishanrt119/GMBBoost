@@ -9,7 +9,9 @@ import {
   startCampaign,
   sendReviewRequestJob,
   reviewAutopollCron,
-  processReviewAutopollJob
+  processReviewAutopollJob,
+  publishScheduledPostsCron,
+  processPublishPostJob
 } from "@/services/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -23,6 +25,8 @@ export const { GET, POST, PUT } = serve({
     startCampaign,
     sendReviewRequestJob,
     reviewAutopollCron,
-    processReviewAutopollJob
+    processReviewAutopollJob,
+    publishScheduledPostsCron,
+    processPublishPostJob
   ],
 });

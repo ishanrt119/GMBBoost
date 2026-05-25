@@ -25,7 +25,7 @@ const sidebarLinks = [
   { name: "Review Manager", icon: MessageSquare, href: "/dashboard/reviews" },
   { name: "Review Campaigns", icon: Megaphone, href: "/dashboard/campaigns" },
   { name: "Upload Customers", icon: UploadCloud, href: "/dashboard/upload" },
-  { name: "WhatsApp CRM", icon: Users, href: "/crm" },
+  { name: "WhatsApp CRM", icon: Users, href: "/dashboard/crm" },
   { name: "My Posts", icon: Calendar, href: "/dashboard/posts" },
   { name: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   { name: "Settings", icon: Settings, href: "/dashboard/settings" },

@@ -17,8 +17,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Reply must be approved before posting" }, { status: 400 });
     }
 
-    // Call actual API (Google My Business) here in the future
-    // For now, simulate posting
+    // Simulate HTTP request to Google API
+    console.log(`[MOCK API] Pushing reply to Google for review ID ${review._id}: "${review.aiSuggestedReply}"`);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     
     review.replyStatus = 'POSTED';
     await review.save();

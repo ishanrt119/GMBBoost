@@ -11,6 +11,7 @@ export interface GenerateContentRequest {
   keywords: string[];
   tone: string;
   content_type: string;
+  previous_posts?: string[];
 }
 
 export interface AIContentResponse {
@@ -51,6 +52,8 @@ Business Details:
 - Location: ${data.location}
 - Target Keywords: ${keywordList}
 - Writing Tone: ${toneLabel}
+
+${data.previous_posts && data.previous_posts.length > 0 ? `To ensure variety, DO NOT repeat the following recent posts:\n- ${data.previous_posts.join('\n- ')}\n` : ''}
 
 Content Requirements:
 - Write in a ${toneLabel} tone
@@ -110,6 +113,7 @@ export async function generateStructuredContent(data: GenerateContentRequest): P
     ],
     temperature: 0.8,
     max_tokens: 1024,
+    response_format: { type: 'json_object' },
   });
 
   const raw = response.choices[0]?.message?.content?.trim();

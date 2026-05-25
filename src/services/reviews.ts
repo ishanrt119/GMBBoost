@@ -66,6 +66,19 @@ export async function processNewReviews(businessId: string) {
             sourcePlatform: data.sourcePlatform,
           });
           aiRepliesGenerated++;
+          
+          if (sentiment === 'critical' && process.env.TWILIO_ACCOUNT_SID) {
+            try {
+              const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+              await client.messages.create({
+                body: `CRITICAL REVIEW ALERT: You just received a 1-star review from ${data.reviewerName}. Log in to reply.`,
+                from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+                to: `whatsapp:${business.phone || '+1234567890'}`
+              });
+            } catch (err: any) {
+              console.error('Failed to send SMS alert:', err.message);
+            }
+          }
         } catch (err: any) {
           errors.push(`Failed to process review for ${data.reviewerName}: ${err.message}`);
         }
