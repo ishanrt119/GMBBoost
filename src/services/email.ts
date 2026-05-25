@@ -1,4 +1,7 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const transporter = process.env.SENDGRID_API_KEY
   ? nodemailer.createTransport({
@@ -59,6 +62,46 @@ export const sendEmail = async (to: string, customerName: string, service: strin
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('❌ Email error:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendEmailOtp = async (to: string, otp: string, purpose: 'verify' | 'reset' = 'verify') => {
+  if (!resend) {
+    console.warn(`Mocking OTP Email to ${to}: ${otp} (Missing RESEND_API_KEY)`);
+    return { success: true, messageId: 'mock_otp_id' };
+  }
+  
+  try {
+    const subject = purpose === 'reset' ? 'Password Reset OTP' : 'Verify Your Email';
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px;">
+        <h2 style="color: #1a1a2e; text-align: center;">${subject}</h2>
+        <p style="color: #555; font-size: 16px;">Hello,</p>
+        <p style="color: #555; font-size: 16px;">Your one-time password is:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <h1 style="color: #4f6ef7; letter-spacing: 5px; font-size: 40px; margin: 0;">${otp}</h1>
+        </div>
+        <p style="color: #888; font-size: 14px; text-align: center;">This code will expire in 15 minutes.</p>
+        <p style="color: #888; font-size: 12px; text-align: center; margin-top: 40px;">If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+    
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'GMB Boost <onboarding@resend.dev>',
+      to: [to],
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('Resend API Error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: data?.id };
+  } catch (error: any) {
+    console.error('OTP Email error:', error.message);
     return { success: false, error: error.message };
   }
 };

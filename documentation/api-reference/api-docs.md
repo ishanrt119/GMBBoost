@@ -4,7 +4,39 @@ This document covers the REST endpoints exposed in `src/app/api`.
 
 ---
 
-## 1. Webhooks
+## 1. Authentication (`/api/auth/*`)
+
+### `POST /api/auth/register`
+**Purpose:** Registers a new user, hashes password, and dispatches an Email OTP directly via Resend.
+**Body:** `{ fullName, email, phone, password, companyName }`
+**Response:** `201 Created`
+
+### `POST /api/auth/login`
+**Purpose:** Authenticates user and sets HttpOnly JWT cookie.
+**Body:** `{ email, password }`
+**Response:** `200 OK` (Sets `Set-Cookie: auth_token=...`)
+
+### `POST /api/auth/verify-email`
+**Purpose:** Verifies an OTP for email.
+**Body:** `{ email, otp }`
+**Response:** `200 OK`
+
+### `POST /api/auth/resend-email-otp`
+**Purpose:** Resends an OTP to the user's email.
+**Body:** `{ email }`
+**Response:** `200 OK`
+
+### `POST /api/auth/logout`
+**Purpose:** Clears the HttpOnly JWT cookie.
+**Response:** `200 OK`
+
+### `GET /api/auth/me`
+**Purpose:** Retrieves the current authenticated user from the JWT cookie.
+**Response:** `200 OK` (Returns User object excluding sensitive fields)
+
+---
+
+## 2. Webhooks
 
 ### `POST /api/webhook/twilio`
 **Purpose:** Receives incoming SMS or WhatsApp messages from Twilio.
@@ -126,4 +158,8 @@ The platform heavily relies on external APIs, which must be configured in your `
 
 ### Inngest API (`INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`)
 - **Usage:** The background job and queue orchestrator.
-- **Purpose:** Inngest's cloud executor securely pings our `/api/inngest` endpoint using these keys to trigger cron jobs and deferred steps (like `step.sleep('2d')`).
+- **Purpose:** Inngest's cloud executor securely pings our `/api/inngest` endpoint using these keys to trigger cron jobs and deferred steps.
+
+### Resend API (`RESEND_API_KEY`)
+- **Usage:** Email delivery service.
+- **Purpose:** Sending secure Email OTPs during user registration and authentication flows.

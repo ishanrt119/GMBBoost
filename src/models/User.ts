@@ -1,16 +1,29 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
-  name: string;
+  fullName: string;
   email: string;
-  password?: string;
-  verified: boolean;
-  verificationToken?: string;
-  googleAccessToken?: string;
-  googleRefreshToken?: string;
-  googleTokenExpiry?: Date;
-  googleConnected: boolean;
-  role: string;
+  phone: string;
+  passwordHash?: string; // Optional if you support OAuth later
+  role: 'Admin' | 'BusinessOwner' | 'TeamMember';
+  companyName?: string;
+  
+  // Verification states
+  isEmailVerified: boolean;
+  
+  // OTP Fields (Hashed values)
+  emailOtpHash?: string;
+  emailOtpExpiry?: Date;
+  passwordResetOtp?: string;
+  passwordResetExpiry?: Date;
+  failedOtpAttempts: number;
+  emailVerifiedAt?: Date;
+  
+  // Security fields
+  failedLoginAttempts: number;
+  accountLockedUntil?: Date;
+  lastLoginAt?: Date;
+  
   businessIds: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -18,16 +31,48 @@ export interface IUser extends Document {
 
 const UserSchema: Schema = new Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, index: true },
-    password: { type: String }, // optional for OAuth users
-    verified: { type: Boolean, default: false },
-    verificationToken: { type: String },
-    googleAccessToken: { type: String },
-    googleRefreshToken: { type: String },
-    googleTokenExpiry: { type: Date },
-    googleConnected: { type: Boolean, default: false },
-    role: { type: String, enum: ['admin', 'manager', 'user'], default: 'user' },
+    fullName: { type: String, required: true },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true, 
+      index: true,
+      lowercase: true,
+      trim: true
+    },
+    phone: { 
+      type: String, 
+      required: true, 
+      unique: true, 
+      index: true,
+      trim: true
+    },
+    passwordHash: { type: String },
+    
+    role: { 
+      type: String, 
+      enum: ['Admin', 'BusinessOwner', 'TeamMember'], 
+      default: 'BusinessOwner' 
+    },
+    companyName: { type: String },
+    
+    isEmailVerified: { type: Boolean, default: false },
+    
+    // OTPs (Stored as hashed values)
+    emailOtpHash: { type: String },
+    emailOtpExpiry: { type: Date },
+    passwordResetOtp: { type: String },
+    passwordResetExpiry: { type: Date },
+    
+    // Verification timestamps and rate limiting
+    failedOtpAttempts: { type: Number, default: 0 },
+    emailVerifiedAt: { type: Date },
+    
+    // Security
+    failedLoginAttempts: { type: Number, default: 0 },
+    accountLockedUntil: { type: Date },
+    lastLoginAt: { type: Date },
+    
     businessIds: [{ type: Schema.Types.ObjectId, ref: 'Business' }],
   },
   { timestamps: true }

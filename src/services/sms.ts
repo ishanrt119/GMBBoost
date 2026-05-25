@@ -26,3 +26,41 @@ export const sendSMS = async (to: string, customerName: string, service: string,
     return { success: false, error: error.message };
   }
 };
+
+export const sendTwilioVerify = async (phone: string) => {
+  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+  if (!client || !verifyServiceSid) {
+    console.warn(`[Mock Twilio Verify] Sent OTP to ${phone}`);
+    return { success: true };
+  }
+  
+  try {
+    const verification = await client.verify.v2.services(verifyServiceSid)
+      .verifications
+      .create({ to: phone, channel: 'sms' });
+      
+    return { success: true, status: verification.status };
+  } catch (error: any) {
+    console.error('Twilio Verify Send Error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const checkTwilioVerify = async (phone: string, code: string) => {
+  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+  if (!client || !verifyServiceSid) {
+    console.warn(`[Mock Twilio Verify] Checked OTP ${code} for ${phone}`);
+    return { success: true, valid: code.length === 6 }; // naive mock validation
+  }
+
+  try {
+    const verificationCheck = await client.verify.v2.services(verifyServiceSid)
+      .verificationChecks
+      .create({ to: phone, code });
+      
+    return { success: true, valid: verificationCheck.status === 'approved' };
+  } catch (error: any) {
+    console.error('Twilio Verify Check Error:', error);
+    return { success: false, error: error.message };
+  }
+};

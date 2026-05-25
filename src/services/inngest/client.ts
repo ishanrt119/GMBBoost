@@ -26,6 +26,9 @@ type Events = {
   "campaign/send-review-request": {
     data: { campaignId: string; customerId: string };
   };
+  "scheduler/publish-post": {
+    data: { postId: string };
+  };
 };
 
 export const inngest = new Inngest({ id: "gmb-optimization-platform", schemas: { events: {} as Events } });

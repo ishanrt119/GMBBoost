@@ -48,8 +48,7 @@ async function sendOutboundMessage(phone: string, body: string, leadId?: string)
 
 // 1. WhatsApp AI Worker
 export const processWhatsappMessage = inngest.createFunction(
-  { id: "process-whatsapp-message", retries: 3 },
-  { event: "whatsapp/incoming" },
+  { id: "process-whatsapp-message", retries: 3, triggers: [{ event: "whatsapp/incoming" }] },
   async ({ event, step }) => {
     // Implement parsing and generating (abridged from previous for brevity, but same logic)
     const { messageSid, from, body, profileName, numMedia } = event.data;
@@ -86,7 +85,7 @@ export const processWhatsappMessage = inngest.createFunction(
 
     const cleanReply = await step.run("generate-ai-reply", async () => {
       const history = await Conversation.find({ leadId }).sort({ timestamp: -1 }).limit(10);
-      const aiContext = [...history].reverse().filter((msg: any) => msg.messageType === 'text' && msg.sender !== 'system').map((msg: any) => ({ role: (msg.sender === 'user' ? 'user' : 'assistant'), content: msg.message }));
+      const aiContext = [...history].reverse().filter((msg: any) => msg.messageType === 'text' && msg.sender !== 'system').map((msg: any) => ({ role: (msg.sender === 'user' ? 'user' : 'assistant') as "user" | "assistant", content: msg.message }));
       
       const lead = await Lead.findById(leadId);
       if (lead.retryCount >= 3) return null;
@@ -122,8 +121,7 @@ export const processWhatsappMessage = inngest.createFunction(
 
 // 2. Lead Follow Up Workflow (Distributed queue replacement for synchronous cron)
 export const followUpCron = inngest.createFunction(
-  { id: "follow-up-cron" },
-  { cron: "0 * * * *" }, // Runs every hour
+  { id: "follow-up-cron", triggers: [{ cron: "0 * * * *" }] }, // Runs every hour
   async ({ step }) => {
     // Step 1: Find leads, but don't send Twilio messages here. Just dispatch jobs.
     const events = await step.run("fetch-leads-for-followup", async () => {
@@ -161,8 +159,7 @@ export const followUpCron = inngest.createFunction(
 );
 
 export const processFollowUpJob = inngest.createFunction(
-  { id: "process-followup-job", retries: 3 },
-  { event: "scheduler/follow-up" },
+  { id: "process-followup-job", retries: 3, triggers: [{ event: "scheduler/follow-up" }] },
   async ({ event, step }) => {
     const { leadId, reminderType } = event.data;
 
@@ -196,8 +193,7 @@ export const processFollowUpJob = inngest.createFunction(
 
 // 3. Content Generation Workflow
 export const generateContentCron = inngest.createFunction(
-  { id: "generate-content-cron" },
-  { cron: "0 9 * * *" }, // Daily at 9 AM
+  { id: "generate-content-cron", triggers: [{ cron: "0 9 * * *" }] }, // Daily at 9 AM
   async ({ step }) => {
     const businesses = await step.run("fetch-businesses", async () => {
       await dbConnect();
@@ -217,8 +213,7 @@ export const generateContentCron = inngest.createFunction(
 );
 
 export const processContentJob = inngest.createFunction(
-  { id: "process-content-job", retries: 3 },
-  { event: "scheduler/generate" },
+  { id: "process-content-job", retries: 3, triggers: [{ event: "scheduler/generate" }] },
   async ({ event, step }) => {
     const { businessId } = event.data;
     
@@ -297,8 +292,7 @@ export const processContentJob = inngest.createFunction(
 
 // 4. Review Campaigns
 export const startCampaign = inngest.createFunction(
-  { id: "start-campaign" },
-  { event: "campaign/start" },
+  { id: "start-campaign", triggers: [{ event: "campaign/start" }] },
   async ({ event, step }) => {
     const { campaignId } = event.data;
     
@@ -323,8 +317,7 @@ export const startCampaign = inngest.createFunction(
 );
 
 export const sendReviewRequestJob = inngest.createFunction(
-  { id: "send-review-request-job", retries: 3 },
-  { event: "campaign/send-review-request" },
+  { id: "send-review-request-job", retries: 3, triggers: [{ event: "campaign/send-review-request" }] },
   async ({ event, step }) => {
     const { campaignId, customerId } = event.data;
     
@@ -365,8 +358,7 @@ export const sendReviewRequestJob = inngest.createFunction(
 
 // 5. Review Autopoll
 export const reviewAutopollCron = inngest.createFunction(
-  { id: "review-autopoll-cron" },
-  { cron: "0 * * * *" },
+  { id: "review-autopoll-cron", triggers: [{ cron: "0 * * * *" }] },
   async ({ step }) => {
     // Simplified: Find clicked > 2h ago, dispatch event per review
     const events = await step.run("fetch-clicked-requests", async () => {
@@ -384,8 +376,7 @@ export const reviewAutopollCron = inngest.createFunction(
 );
 
 export const processReviewAutopollJob = inngest.createFunction(
-  { id: "process-review-autopoll-job", retries: 3 },
-  { event: "scheduler/review-autopoll" },
+  { id: "process-review-autopoll-job", retries: 3, triggers: [{ event: "scheduler/review-autopoll" }] },
   async ({ event, step }) => {
     await step.run("mark-reviewed", async () => {
       await dbConnect();
@@ -408,8 +399,7 @@ export const processReviewAutopollJob = inngest.createFunction(
 
 // 6. Post Publishing Worker
 export const publishScheduledPostsCron = inngest.createFunction(
-  { id: "publish-scheduled-posts-cron" },
-  { cron: "*/15 * * * *" }, // Run every 15 minutes
+  { id: "publish-scheduled-posts-cron", triggers: [{ cron: "*/15 * * * *" }] }, // Run every 15 minutes
   async ({ step }) => {
     const events = await step.run("fetch-posts-to-publish", async () => {
       await dbConnect();
@@ -434,8 +424,7 @@ export const publishScheduledPostsCron = inngest.createFunction(
 );
 
 export const processPublishPostJob = inngest.createFunction(
-  { id: "process-publish-post-job", retries: 3 },
-  { event: "scheduler/publish-post" },
+  { id: "process-publish-post-job", retries: 3, triggers: [{ event: "scheduler/publish-post" }] },
   async ({ event, step }) => {
     const { postId } = event.data;
     
@@ -463,3 +452,4 @@ export const processPublishPostJob = inngest.createFunction(
     return { success: true };
   }
 );
+
