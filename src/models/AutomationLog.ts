@@ -1,6 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAutomationLog extends Document {
+  workflow?: string;
+  event?: string;
   action?: string;
   status?: string;
   message?: string;
@@ -8,13 +10,17 @@ export interface IAutomationLog extends Document {
   response?: string;
   aiModel?: string;
   tokens?: number;
-  type: 'scheduler' | 'ai_generation' | 'n8n_webhook' | 'other';
+  duration?: number;
+  error?: string;
+  type: 'scheduler' | 'ai_generation' | 'inngest_job' | 'other';
   createdAt: Date;
   updatedAt: Date;
 }
 
 const AutomationLogSchema: Schema = new Schema(
   {
+    workflow: { type: String },
+    event: { type: String },
     action: { type: String },
     status: { type: String },
     message: { type: String },
@@ -22,7 +28,9 @@ const AutomationLogSchema: Schema = new Schema(
     response: { type: String },
     aiModel: { type: String },
     tokens: { type: Number },
-    type: { type: String, enum: ['scheduler', 'ai_generation', 'n8n_webhook', 'other'], required: true, default: 'other' },
+    duration: { type: Number },
+    error: { type: String },
+    type: { type: String, enum: ['scheduler', 'ai_generation', 'inngest_job', 'other'], required: true, default: 'other' },
   },
   { timestamps: true }
 );

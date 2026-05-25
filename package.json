@@ -31,6 +31,7 @@
     "framer-motion": "^12.38.0",
     "googleapis": "^172.0.0",
     "groq-sdk": "^1.2.0",
+    "inngest": "^4.4.0",
     "js-cookie": "^3.0.7",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.16.0",
