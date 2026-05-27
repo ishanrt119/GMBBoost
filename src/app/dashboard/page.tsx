@@ -1,184 +1,81 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { 
-  Search,
-  TrendingUp,
-  Star,
-  CheckCircle2,
-  Clock,
-  MoreVertical,
-  Users,
-  Loader2,
-  MessageCircle
-} from "lucide-react";
+import React, { useState, useEffect, useCallback } from 'react';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import MetricsGrid from '@/components/dashboard/MetricsGrid';
+import ChartsSection from '@/components/dashboard/ChartsSection';
+import QuickPanels from '@/components/dashboard/QuickPanels';
 
-export default function Dashboard() {
-  const [data, setData] = useState<any>({
-    audits: [],
-    reviews: [],
-    leads: [],
-    posts: []
-  });
+export default function CommandCenter() {
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+
+  // In production, grab from auth context
+  const businessId = '60b9b3b3b3b3b3b3b3b3b3b3'; 
+
+  const fetchStats = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) setRefreshing(true);
+    
+    try {
+      const res = await fetch(`/api/dashboard/stats?businessId=${businessId}`);
+      const json = await res.json();
+      if (json.success) {
+        setData(json.data);
+        setLastRefreshed(new Date());
+      }
+    } catch (e) {
+      console.error('Failed to fetch dashboard stats', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [businessId]);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [auditsRes, reviewsRes, leadsRes, postsRes] = await Promise.all([
-          fetch("/api/audit").then(res => res.json()),
-          fetch("/api/reviews").then(res => res.json()),
-          fetch("/api/leads").then(res => res.json()),
-          fetch("/api/posts").then(res => res.json())
-        ]);
-
-        setData({
-          audits: Array.isArray(auditsRes) ? auditsRes : [],
-          reviews: Array.isArray(reviewsRes) ? reviewsRes : [],
-          leads: Array.isArray(leadsRes) ? leadsRes : [],
-          posts: Array.isArray(postsRes) ? postsRes : []
-        });
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+    fetchStats();
     
-    fetchData();
-  }, []);
-
-  const stats = [
-    { label: "Total Audits", value: data.audits.length, change: "Active", trending: true },
-    { label: "New Reviews", value: data.reviews.length, change: "Live", trending: true },
-    { label: "WhatsApp Leads", value: data.leads.length, change: "Tracking", trending: true },
-    { label: "Scheduled Posts", value: data.posts.length, change: "Planned", trending: true },
-  ];
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [fetchStats]);
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-medium text-slate-500">Loading Command Center...</p>
       </div>
     );
   }
 
-  // Calculate Average Score if audits exist
-  const avgScore = data.audits.length > 0 
-    ? Math.round(data.audits.reduce((acc: number, cur: any) => acc + (cur.overallScore || 0), 0) / data.audits.length)
-    : 0;
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 p-8 text-center text-slate-500">
+        Failed to load dashboard data.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10 pb-10">
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-slate-900">Dashboard Overview</h1>
-          <p className="text-slate-500">Here's what's happening with your business profiles across MongoDB.</p>
-        </div>
-        <div className="flex gap-4">
-          <Link href="/dashboard/crm" className="bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-sm">
-            <MessageCircle className="w-4 h-4" />
-            AI WhatsApp CRM
-          </Link>
-          <Link href="/dashboard/audit" className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-sm">
-            <Search className="w-4 h-4" />
-            Run AI GMB Audit
-          </Link>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:border-slate-300 transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-slate-50 text-slate-500">
-                {idx === 0 && <Search className="w-4 h-4" />}
-                {idx === 1 && <Star className="w-4 h-4" />}
-                {idx === 2 && <Users className="w-4 h-4" />}
-                {idx === 3 && <Clock className="w-4 h-4" />}
-              </div>
-              <div className={`text-xs font-bold px-2 py-1 rounded-lg ${stat.trending ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
-                {stat.change}
-              </div>
-            </div>
-            <div className="text-2xl font-bold mb-1 text-slate-900">{stat.value}</div>
-            <div className="text-xs text-slate-400 font-medium">{stat.label}</div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Main Section: Pipeline & Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Lead Pipeline */}
-        <div className="lg:col-span-8 bg-white shadow-sm rounded-[32px] border border-slate-200 p-8">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-slate-900">Recent Leads (MongoDB)</h3>
-            <Link href="/dashboard/crm" className="text-primary text-sm font-bold hover:underline">View Pipeline</Link>
-          </div>
-          <div className="space-y-4">
-            {data.leads.length === 0 ? (
-              <p className="text-slate-500 text-sm">No leads found in database.</p>
-            ) : (
-              data.leads.slice(0, 5).map((lead: any, i: number) => (
-                <div key={lead._id || i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold border border-indigo-100">
-                      {lead.name ? lead.name.substring(0, 2).toUpperCase() : "??"}
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900">{lead.name}</div>
-                      <div className="text-[10px] text-slate-500">Status: {lead.status}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
-                      {lead.source}
-                    </div>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreVertical className="w-4 h-4 text-slate-400" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8 bg-gradient-to-br from-indigo-50/50 to-transparent">
-            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-              <TrendingUp className="text-primary w-6 h-6" />
-            </div>
-            <h4 className="text-lg font-bold mb-2 text-slate-900">Avg Growth Score: {avgScore || 0}/100</h4>
-            <p className="text-xs text-slate-500 leading-relaxed mb-6">
-              Based on {data.audits.length} recent audits stored in your Atlas database.
-            </p>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-center gap-2 text-[10px] text-slate-600">
-                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                Cloud connected successfully
-              </li>
-              <li className="flex items-center gap-2 text-[10px] text-slate-600">
-                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                Mongoose models loaded
-              </li>
-            </ul>
-            <button className="w-full py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-md">
-              View All Reports
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-slate-50/50 p-4 sm:p-8 pt-10">
+      <div className="max-w-[1600px] mx-auto">
+        <DashboardHeader 
+          businessName="Demo Business" 
+          onRefresh={() => fetchStats(true)} 
+          lastRefreshed={lastRefreshed}
+          isRefreshing={refreshing}
+        />
+        
+        <MetricsGrid metrics={data.metrics} />
+        
+        <ChartsSection charts={data.charts} />
+        
+        <QuickPanels panels={data.panels} />
       </div>
     </div>
   );
