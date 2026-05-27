@@ -50,70 +50,121 @@ async function sendOutboundMessage(phone: string, body: string, leadId?: string)
 export const processWhatsappMessage = inngest.createFunction(
   { id: "process-whatsapp-message", retries: 3, triggers: [{ event: "whatsapp/incoming" }] },
   async ({ event, step }) => {
-    // Implement parsing and generating (abridged from previous for brevity, but same logic)
-    const { messageSid, from, body, profileName, numMedia } = event.data;
+    const { messageSid, from, body, numMedia, leadId, threadId, tenantId, businessId } = event.data;
+    
+    const dbConnect = (await import("@/lib/mongodb")).default;
     await dbConnect();
+    
+    const { default: Conversation } = await import("@/models/Conversation");
+    const { default: ConversationThread } = await import("@/models/ConversationThread");
+    const { default: BusinessAIConfig } = await import("@/models/BusinessAIConfig");
+    const { default: Activity } = await import("@/models/Activity");
+    const { Groq } = await import("groq-sdk");
+
     const phone = from.replace('whatsapp:', '');
 
-    await step.run("log-incoming", async () => {
-      await MessageQueue.create({ direction: 'INBOUND', status: 'SENT', payload: event.data });
-    });
-
-    const leadId = await step.run("fetch-or-create-lead", async () => {
-      let l = await Lead.findOne({ phone });
-      if (!l) l = await Lead.create({ phone, name: profileName || phone, source: 'WhatsApp', status: 'New', retryCount: 0 });
-      else {
-        if (l.status === 'New') l.status = 'Contacted';
-      }
-      l.lastInteractionTime = new Date();
-      await l.save();
-      return l._id.toString();
-    });
-
-    if (!body && numMedia === 0) return { success: true };
-
-    await step.run("save-user-msg", async () => {
-      await Conversation.create({ leadId, sender: 'user', message: numMedia > 0 ? '[Media]' : body, aiGenerated: false, twilioMessageSid: messageSid, messageType: numMedia > 0 ? 'media' : 'text' });
-    });
-
-    if (numMedia > 0) {
-      await step.run("send-media-fallback", async () => {
-        await sendOutboundMessage(phone, "I can't view images or audio right now. Please type out your request!", leadId);
+    // 1. Log inbound message
+    await step.run("log-inbound-msg", async () => {
+      await Conversation.create({
+        tenantId,
+        businessId,
+        leadId,
+        direction: 'inbound',
+        messageText: numMedia > 0 ? '[Media Attachment]' : body,
+        isAI: false,
+        messageStatus: 'received',
+        twilioSid: messageSid
       });
-      return { success: true };
+    });
+
+    if (numMedia > 0 && !body) return { success: true, reason: 'Media-only message ignored by AI' };
+
+    // 2. Check Thread Config
+    const thread = await step.run("fetch-thread", async () => {
+      return await ConversationThread.findById(threadId);
+    });
+
+    if (!thread || !thread.aiEnabled) {
+      return { success: true, reason: 'AI disabled for this thread' };
     }
 
-    const cleanReply = await step.run("generate-ai-reply", async () => {
-      const history = await Conversation.find({ leadId }).sort({ timestamp: -1 }).limit(10);
-      const aiContext = [...history].reverse().filter((msg: any) => msg.messageType === 'text' && msg.sender !== 'system').map((msg: any) => ({ role: (msg.sender === 'user' ? 'user' : 'assistant') as "user" | "assistant", content: msg.message }));
+    // 3. Generate AI Reply
+    const aiReply = await step.run("generate-ai-reply", async () => {
+      // Get AI Config
+      let config = await BusinessAIConfig.findOne({ businessId });
+      if (!config) {
+        config = {
+          systemPrompt: "You are an AI WhatsApp sales agent. Qualify leads and help book demos. Keep responses under 60 words.",
+          aiTone: "Professional",
+          salesRules: "Never discuss competitor pricing."
+        };
+      }
+      if (config.aiEnabled === false) return null; // Global shutoff
+
+      // Get Chat History
+      const history = await Conversation.find({ leadId })
+        .sort({ timestamp: -1 })
+        .limit(10);
       
-      const lead = await Lead.findById(leadId);
-      if (lead.retryCount >= 3) return null;
+      const messages = history.reverse().map((msg: any) => ({
+        role: msg.direction === 'inbound' ? 'user' : 'assistant',
+        content: msg.messageText
+      }));
 
-      let aiResponse = "";
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const systemMessage = {
+        role: 'system',
+        content: `PROMPT: ${config.systemPrompt}\nTONE: ${config.aiTone}\nRULES: ${config.salesRules}`
+      };
+
       try {
-        aiResponse = await generateSalesResponse(aiContext, lead);
+        const response = await groq.chat.completions.create({
+          messages: [systemMessage, ...messages] as any[],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.5,
+          max_tokens: 150,
+        });
+        return response.choices[0]?.message?.content?.trim();
       } catch (e) {
-        aiResponse = FALLBACK_MESSAGE;
+        console.error("AI Generation Error", e);
+        return null;
       }
-
-      let reply = aiResponse;
-      const leadMatch = aiResponse.match(/LEAD_CAPTURED::name=(.+?)\|\|interest=(.+?)(?:\n|$)/);
-      if (leadMatch) {
-        // We no longer trigger n8n, the lead is captured safely in MongoDB
-      }
-
-      reply = reply.replace(/NAME_RECEIVED::.+/g, '').replace(/LEAD_CAPTURED::.+/g, '').replace(/INTEREST_UPDATED::.+/g, '').replace(/BOOKING_CONFIRMED::.+/g, '').replace(/HUMAN_HANDOFF/g, '').trim();
-
-      await Conversation.create({ leadId, sender: aiResponse === FALLBACK_MESSAGE ? 'system' : 'ai', message: reply, aiGenerated: true, messageType: 'text', aiProcessed: true });
-      return reply;
     });
 
-    if (cleanReply) {
-      await step.run("send-outbound", async () => {
-        await sendOutboundMessage(phone, cleanReply, leadId);
+    if (!aiReply) return { success: true, reason: 'AI skipped or failed' };
+
+    // 4. Send Outbound
+    const outboundSid = await step.run("send-outbound", async () => {
+      return await sendOutboundMessage(phone, aiReply, leadId); // returns message sid
+    });
+
+    // 5. Log outbound message & Update Thread
+    await step.run("log-outbound-msg", async () => {
+      await Conversation.create({
+        tenantId,
+        businessId,
+        leadId,
+        direction: 'outbound',
+        messageText: aiReply,
+        isAI: true,
+        messageStatus: 'sent',
+        twilioSid: outboundSid || 'pending'
       });
-    }
+
+      await ConversationThread.findByIdAndUpdate(threadId, {
+        lastMessage: aiReply,
+        lastActivityAt: new Date()
+      });
+
+      // Update CRM Timeline
+      await Activity.create({
+        tenantId,
+        leadId,
+        type: 'WhatsApp',
+        content: aiReply,
+        metadata: { isAI: true }
+      });
+    });
 
     return { success: true };
   }

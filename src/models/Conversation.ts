@@ -1,40 +1,44 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IConversation extends Document {
+  tenantId: string;
+  organizationId?: string;
+  businessId: mongoose.Types.ObjectId;
   leadId: mongoose.Types.ObjectId;
-  sender: 'user' | 'ai' | 'system';
-  message: string;
-  aiGenerated: boolean;
-  timestamp: Date;
   
-  twilioMessageSid?: string;
-  messageType?: string;
-  aiProcessed?: boolean;
-  failedReason?: string;
-  duplicateEvent?: boolean;
-
-  aiSummary?: string;
-  extractedInsights?: any;
+  direction: 'inbound' | 'outbound';
+  messageText: string;
+  isAI: boolean;
+  messageStatus: 'sent' | 'delivered' | 'read' | 'failed' | 'received';
+  twilioSid?: string;
+  metadata?: any;
+  
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const ConversationSchema: Schema = new Schema(
   {
+    tenantId: { type: String, required: true, index: true },
+    organizationId: { type: String },
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
     leadId: { type: Schema.Types.ObjectId, ref: 'Lead', required: true, index: true },
-    sender: { type: String, enum: ['user', 'ai', 'system'], required: true },
-    message: { type: String, required: true },
-    aiGenerated: { type: Boolean, default: false },
-    timestamp: { type: Date, default: Date.now, index: true },
-
-    twilioMessageSid: { type: String, index: true },
-    messageType: { type: String, default: 'text' },
-    aiProcessed: { type: Boolean, default: false },
-    failedReason: { type: String },
-    duplicateEvent: { type: Boolean, default: false },
-
-    aiSummary: { type: String },
-    extractedInsights: { type: Schema.Types.Mixed }
+    
+    direction: { type: String, enum: ['inbound', 'outbound'], required: true },
+    messageText: { type: String, required: true },
+    isAI: { type: Boolean, default: false },
+    messageStatus: { 
+      type: String, 
+      enum: ['sent', 'delivered', 'read', 'failed', 'received'],
+      default: 'received'
+    },
+    twilioSid: { type: String },
+    metadata: { type: Schema.Types.Mixed },
+    
+    timestamp: { type: Date, default: Date.now, index: true }
   },
-  { timestamps: false }
+  { timestamps: true }
 );
 
 export default mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);

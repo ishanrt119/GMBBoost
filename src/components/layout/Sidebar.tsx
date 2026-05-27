@@ -27,6 +27,7 @@ const sidebarLinks = [
   { name: "My Posts", icon: Megaphone, href: "/dashboard/posts" },
   { name: "Content History", icon: Clock, href: "/dashboard/history" },
   { name: "Review Manager", icon: Star, href: "/dashboard/reviews" },
+  { name: "Sales Inbox", icon: MessageSquare, href: "/dashboard/inbox" },
   { name: "WhatsApp CRM", icon: Users, href: "/dashboard/crm" },
 ];
 
