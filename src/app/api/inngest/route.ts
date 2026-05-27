@@ -4,7 +4,8 @@ import {
   processWhatsappMessage,
   followUpCron,
   processFollowUpJob,
-  generateContentCron,
+  bufferMonitorWorker,
+  manualContentGenerate,
   processContentJob,
   startCampaign,
   sendReviewRequestJob,
@@ -12,7 +13,10 @@ import {
   processReviewAutopollJob,
   publishScheduledPostsCron,
   processPublishPostJob,
-  generateAuditJob
+  generateAuditJob,
+  reviewSyncWorker,
+  processReviewSyncJob,
+  criticalAlertWorker
 } from "@/services/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -21,7 +25,8 @@ export const { GET, POST, PUT } = serve({
     processWhatsappMessage,
     followUpCron,
     processFollowUpJob,
-    generateContentCron,
+    bufferMonitorWorker,
+    manualContentGenerate,
     processContentJob,
     startCampaign,
     sendReviewRequestJob,
@@ -29,6 +34,9 @@ export const { GET, POST, PUT } = serve({
     processReviewAutopollJob,
     publishScheduledPostsCron,
     processPublishPostJob,
-    generateAuditJob
+    generateAuditJob,
+    reviewSyncWorker,
+    processReviewSyncJob,
+    criticalAlertWorker
   ],
 });

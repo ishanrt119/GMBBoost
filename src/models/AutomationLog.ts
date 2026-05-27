@@ -1,6 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAutomationLog extends Document {
+  tenantId?: string;
+  organizationId?: string;
+  businessId?: string;
   workflow?: string;
   event?: string;
   action?: string;
@@ -19,6 +22,9 @@ export interface IAutomationLog extends Document {
 
 const AutomationLogSchema: Schema = new Schema(
   {
+    tenantId: { type: String, index: true },
+    organizationId: { type: String, index: true },
+    businessId: { type: String, index: true },
     workflow: { type: String },
     event: { type: String },
     action: { type: String },

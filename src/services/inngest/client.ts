@@ -32,6 +32,19 @@ type Events = {
   "audit/generate.requested": {
     data: { auditId: string };
   };
+  "scheduler/manual-generate": {
+    data: { businessId: string; force?: boolean };
+  };
+  "reviews/sync": {
+    data: { businessId: string };
+  };
+  "reviews/critical-alert": {
+    data: { businessId: string };
+  };
 };
 
-export const inngest = new Inngest({ id: "gmb-optimization-platform", schemas: { events: {} as Events } });
+export const inngest = new Inngest({ 
+  id: "gmb-optimization-platform", 
+  eventKey: process.env.INNGEST_EVENT_KEY || "local",
+  schemas: { events: {} as Events } 
+});

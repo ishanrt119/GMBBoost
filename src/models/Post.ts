@@ -25,6 +25,7 @@ export interface IPost extends Document {
   failureReason?: string;
   retryCount: number;
   aiMetadata?: any;
+  automationMetadata?: any;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +56,7 @@ const PostSchema: Schema = new Schema(
     failureReason: { type: String },
     retryCount: { type: Number, default: 0 },
     aiMetadata: { type: Schema.Types.Mixed },
+    automationMetadata: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
 );

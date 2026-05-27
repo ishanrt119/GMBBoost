@@ -12,7 +12,7 @@ import Customer from "@/models/Customer";
 import Campaign from "@/models/Campaign";
 import AutomationLog from "@/models/AutomationLog";
 import { generateSalesResponse } from "@/services/ai";
-import { generateStructuredContent } from "@/services/content-ai";
+import { generateAIContent } from "@/services/ai/contentEngine";
 import twilio from "twilio";
 
 const FALLBACK_MESSAGE = "I'm having a little trouble connecting to my brain right now. Please hold on or call our main line!";
@@ -191,9 +191,9 @@ export const processFollowUpJob = inngest.createFunction(
   }
 );
 
-// 3. Content Generation Workflow
-export const generateContentCron = inngest.createFunction(
-  { id: "generate-content-cron", triggers: [{ cron: "0 9 * * *" }] }, // Daily at 9 AM
+// 3. Content Scheduler Automation Workflow (Module 3)
+export const bufferMonitorWorker = inngest.createFunction(
+  { id: "buffer-monitor-worker", triggers: [{ cron: "0 8 * * *" }] }, // Daily at 8 AM
   async ({ step }) => {
     const businesses = await step.run("fetch-businesses", async () => {
       await dbConnect();
@@ -212,10 +212,22 @@ export const generateContentCron = inngest.createFunction(
   }
 );
 
+export const manualContentGenerate = inngest.createFunction(
+  { id: "manual-content-generate", triggers: [{ event: "scheduler/manual-generate" }] },
+  async ({ event, step }) => {
+    // Allows the UI to explicitly request generation
+    await step.sendEvent("dispatch-manual-generation", {
+      name: "scheduler/generate",
+      data: event.data
+    });
+    return { success: true };
+  }
+);
+
 export const processContentJob = inngest.createFunction(
   { id: "process-content-job", retries: 3, triggers: [{ event: "scheduler/generate" }] },
   async ({ event, step }) => {
-    const { businessId } = event.data;
+    const { businessId, force } = event.data;
     
     await dbConnect();
     const business = await Business.findById(businessId);
@@ -233,57 +245,85 @@ export const processContentJob = inngest.createFunction(
       }).sort({ scheduledDate: 1 }).lean();
     });
 
-    if (futurePosts.length >= MIN_SCHEDULED_POSTS) {
-      return { success: true, message: "Buffer full" };
+    if (!force && futurePosts.length >= MIN_SCHEDULED_POSTS) {
+      return { success: true, message: "Buffer Healthy" };
     }
 
-    const missingPosts = MIN_SCHEDULED_POSTS - futurePosts.length;
-    let lastScheduledDate = futurePosts.length > 0 
-      ? new Date(futurePosts[futurePosts.length - 1].scheduledDate || new Date())
-      : new Date();
+    // Alert Admin if buffer is low during cron check
+    if (!force && futurePosts.length < 4) {
+      await step.run("alert-admin-low-buffer", async () => {
+        const msg = `⚠️ *Marketing Alert*\nBuffer for ${business.name} is running critically low (${futurePosts.length} posts remaining). Generating new content now.`;
+        if (business.phone) await sendOutboundMessage(business.phone, msg);
+      });
+    }
 
-    for (let i = 1; i <= missingPosts; i++) {
-      await step.run(`generate-and-save-post-${i}`, async () => {
+    try {
+      await step.run(`generate-and-save-buffer`, async () => {
         const { default: Post } = await import("@/models/Post");
-        const nextDate = new Date(lastScheduledDate);
-        nextDate.setDate(nextDate.getDate() + 1);
-        lastScheduledDate = nextDate; // update for next iteration
-
-        // Deduplication context
-        const recentPosts = futurePosts.slice(-5).map((p: any) => p.content);
-
-        const aiResponse = await generateStructuredContent({
-          business_name: business.name || 'Local Business',
-          business_type: business.category || 'Local Business',
+        
+        const aiResponse = await generateAIContent({
+          businessName: business.name || 'Local Business',
+          businessType: business.category || 'Local Business',
           location: business.address || 'Local Area',
-          keywords: business.keywords || [],
-          tone: 'professional',
-          content_type: 'gmb_post',
-          previous_posts: recentPosts
+          keywords: business.keywords || ['services'],
+          tone: 'Professional',
+          contentTypes: ['GMB Posts']
         });
         
-        if (!aiResponse) throw new Error("Empty AI content");
+        if (!aiResponse || !aiResponse.posts) throw new Error("Empty AI content returned");
 
-        const newPost = await Post.create({
-          title: aiResponse.title || `${business.name} Update`,
-          content: aiResponse.content,
-          status: "scheduled",
-          platform: "gmb",
-          aiGenerated: true,
-          scheduledDate: nextDate,
-          businessId: business._id,
-        });
+        let lastScheduledDate = futurePosts.length > 0 
+          ? new Date(futurePosts[futurePosts.length - 1].scheduledDate || new Date())
+          : new Date();
 
-        // Add to futurePosts to prevent repetition in the next loop iteration
-        futurePosts.push(newPost);
+        for (const generatedPost of aiResponse.posts) {
+           const nextDate = new Date(lastScheduledDate);
+           nextDate.setDate(nextDate.getDate() + 1);
+           lastScheduledDate = nextDate;
+
+           await Post.create({
+             tenantId: business.tenantId || 'demo-tenant', // fallback for demo
+             title: generatedPost.title,
+             content: generatedPost.body,
+             postType: generatedPost.postType,
+             cta: generatedPost.cta,
+             hashtags: generatedPost.hashtags,
+             status: "scheduled",
+             platform: "gmb",
+             aiGenerated: true,
+             scheduledDate: nextDate,
+             businessId: business._id,
+             automationMetadata: {
+               generatedVia: force ? 'manual' : 'cron',
+             }
+           });
+        }
 
         await AutomationLog.create({
+          tenantId: business.tenantId || 'demo-tenant',
+          businessId: business._id.toString(),
           type: 'ai_generation',
           workflow: 'content-scheduler',
-          action: 'generate_post',
+          action: 'generate_post_batch',
           status: 'success',
         });
       });
+    } catch (error: any) {
+      await step.run("alert-admin-generation-failed", async () => {
+        const msg = `❌ *Marketing Alert*\nFailed to generate content for ${business.name}. Please check the dashboard.`;
+        if (business.phone) await sendOutboundMessage(business.phone, msg);
+        
+        await AutomationLog.create({
+          tenantId: business.tenantId || 'demo-tenant',
+          businessId: business._id.toString(),
+          type: 'ai_generation',
+          workflow: 'content-scheduler',
+          action: 'generate_post_batch',
+          status: 'failed',
+          error: error.message
+        });
+      });
+      throw error;
     }
 
     return { success: true };
@@ -466,5 +506,64 @@ export const generateAuditJob = inngest.createFunction(
     });
     
     return { success: true, auditId };
+  }
+);
+
+// 8. Review Management Automation Workflow (Module 4)
+export const reviewSyncWorker = inngest.createFunction(
+  { id: "review-sync-worker", triggers: [{ cron: "0 2 * * *" }] }, // Nightly at 2 AM
+  async ({ step }) => {
+    const businesses = await step.run("fetch-active-businesses", async () => {
+      const dbConnect = (await import("@/lib/mongodb")).default;
+      await dbConnect();
+      const { default: Business } = await import("@/models/Business");
+      return await Business.find({ isActive: true }).select('_id').lean();
+    });
+
+    const events = businesses.map(b => ({
+      name: "reviews/sync",
+      data: { businessId: b._id.toString() }
+    }));
+
+    if (events.length > 0) {
+      await step.sendEvent("dispatch-review-syncs", events);
+    }
+    return { success: true, dispatched: events.length };
+  }
+);
+
+export const processReviewSyncJob = inngest.createFunction(
+  { id: "process-review-sync-job", retries: 3, triggers: [{ event: "reviews/sync" }] },
+  async ({ event, step }) => {
+    const { businessId } = event.data;
+    await step.run("sync-reviews-from-provider", async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reviews/fetch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId })
+      });
+      if (!res.ok) throw new Error("Sync API failed");
+    });
+    return { success: true };
+  }
+);
+
+export const criticalAlertWorker = inngest.createFunction(
+  { id: "critical-review-alert-worker", triggers: [{ event: "reviews/critical-alert" }] },
+  async ({ event, step }) => {
+    const { businessId } = event.data;
+    
+    const dbConnect = (await import("@/lib/mongodb")).default;
+    await dbConnect();
+    const { default: Business } = await import("@/models/Business");
+    const business = await Business.findById(businessId);
+    if (!business || !business.phone) return { skipped: true, reason: "No phone" };
+
+    await step.run("send-twilio-alert", async () => {
+      const msg = `🚨 *Reputation Alert*\n${business.name} just received a critical/1-star review. Please check your Reputation Dashboard immediately to generate an AI response.`;
+      await sendOutboundMessage(business.phone, msg);
+    });
+
+    return { success: true };
   }
 );

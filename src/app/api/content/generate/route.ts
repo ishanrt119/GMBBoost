@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const parsed = generateContentSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid input', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 });
     }
 
     // Process synchronously since LLaMA 3.3 70B on Groq takes < 5 seconds
