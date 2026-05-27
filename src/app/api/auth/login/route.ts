@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { verifyPassword, generateToken } from '@/services/auth/security';
+import Subscription from '@/models/Subscription';
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +41,23 @@ export async function POST(req: Request) {
     user.lastLoginAt = new Date();
     await user.save();
 
-    const token = generateToken({ userId: user._id, role: user.role, email: user.email });
+    // Fetch subscription to embed active modules in JWT for edge routing
+    const sub = await Subscription.findOne({ userId: user._id });
+    
+    let activeModules: string[] = [];
+    if (sub && sub.modules) {
+      activeModules = Object.entries(sub.modules)
+        .filter(([_, data]: [string, any]) => data.enabled)
+        .map(([key]) => key);
+    }
+
+    const token = generateToken({ 
+      userId: user._id, 
+      role: user.role, 
+      email: user.email,
+      onboardingCompleted: user.onboardingCompleted,
+      activeModules
+    });
     
     const response = NextResponse.json({ success: true, message: 'Login successful' }, { status: 200 });
     

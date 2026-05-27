@@ -4,6 +4,9 @@ import dbConnect from "@/lib/mongodb";
 import Business from "@/models/Business";
 import Audit from "@/models/Audit";
 import Review from "@/models/Review";
+import Sentiment from "sentiment";
+
+const nlp = new Sentiment();
 
 export async function runFullAudit(query: string) {
   await dbConnect();
@@ -73,9 +76,19 @@ export async function runFullAudit(query: string) {
     for (const r of gmbData.reviews_data) {
       const reviewText = r.text || r.snippet || "";
       const rating = r.rating || 0;
+      
+      // Perform NLP Sentiment Analysis
       let sentiment = "neutral";
-      if (rating >= 4) sentiment = "positive";
-      else if (rating <= 2) sentiment = "negative";
+      if (reviewText.trim().length > 0) {
+        const result = nlp.analyze(reviewText);
+        // Score > 0 is positive, < 0 is negative, 0 is neutral
+        if (result.score > 0) sentiment = "positive";
+        else if (result.score < 0) sentiment = "negative";
+      } else {
+        // Fallback to star rating ONLY if there is absolutely no text to analyze
+        if (rating >= 4) sentiment = "positive";
+        else if (rating <= 2) sentiment = "negative";
+      }
 
       const review = await Review.create({
         businessId: business._id,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import Subscription from '@/models/Subscription';
 import { hashPassword, validatePasswordStrength } from '@/services/auth/security';
 import { generateOTP, hashOTP } from '@/services/auth/otp';
 import { sendEmailOtp } from '@/services/email';
@@ -36,6 +37,13 @@ export async function POST(req: Request) {
       companyName,
       emailOtpHash: hashOTP(emailOtp),
       emailOtpExpiry: otpExpiry,
+    });
+
+    // Create default subscription
+    await Subscription.create({
+      userId: user._id,
+      planType: 'Free',
+      billingStatus: 'Trialing',
     });
 
     try {

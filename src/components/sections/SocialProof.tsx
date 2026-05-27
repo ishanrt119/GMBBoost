@@ -29,7 +29,7 @@ export function Testimonials() {
   return (
     <section id="testimonials" className="py-24 px-6 max-w-7xl mx-auto overflow-hidden">
       <div className="text-center mb-20">
-        <h2 className="text-3xl md:text-5xl font-bold mb-6">Loved by <span className="text-gradient">Local Business Owners</span></h2>
+        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">Loved by <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Local Business Owners</span></h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -40,17 +40,17 @@ export function Testimonials() {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: idx * 0.1 }}
             viewport={{ once: true }}
-            className="p-8 rounded-3xl bg-white/[0.03] border border-white/10 relative"
+            className="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm relative"
           >
             <div className="flex gap-1 mb-6">
               {[...Array(t.rating)].map((_, i) => (
                 <Star key={i} className="w-4 h-4 fill-primary text-primary" />
               ))}
             </div>
-            <p className="text-lg italic text-white/80 mb-8 leading-relaxed">"{t.quote}"</p>
+            <p className="text-lg italic text-slate-600 mb-8 leading-relaxed">"{t.quote}"</p>
             <div>
-              <div className="font-bold">{t.name}</div>
-              <div className="text-sm text-white/40">{t.business}</div>
+              <div className="font-bold text-slate-900">{t.name}</div>
+              <div className="text-sm text-slate-400">{t.business}</div>
             </div>
           </motion.div>
         ))}
@@ -72,14 +72,14 @@ export function FinalCTA() {
           <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8">
             Ready to Grow Your <br /> Local Business Using AI?
           </h2>
-          <p className="text-white/80 text-lg md:text-xl max-w-2xl mx-auto mb-12">
+          <p className="text-indigo-100 text-lg md:text-xl max-w-2xl mx-auto mb-12">
             Join 500+ businesses already automating their growth. Start your 14-day free trial today.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="w-full sm:w-auto px-10 py-5 bg-white text-black rounded-2xl font-bold hover:bg-white/90 hover:scale-105 transition-all shadow-xl">
+            <Link href="/register" className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 rounded-2xl font-bold hover:bg-slate-50 hover:scale-105 transition-all shadow-xl">
               Start Free Audit
             </Link>
-            <Link href="/login" className="w-full sm:w-auto px-10 py-5 bg-black/20 border border-white/30 text-white rounded-2xl font-bold hover:bg-black/40 hover:scale-105 transition-all backdrop-blur-sm">
+            <Link href="/login" className="w-full sm:w-auto px-10 py-5 bg-slate-900/50 border border-white/20 text-white rounded-2xl font-bold hover:bg-slate-900/70 hover:scale-105 transition-all backdrop-blur-sm shadow-xl">
               Book Demo
             </Link>
           </div>

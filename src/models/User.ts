@@ -10,6 +10,7 @@ export interface IUser extends Document {
   
   // Verification states
   isEmailVerified: boolean;
+  onboardingCompleted: boolean;
   
   // OTP Fields (Hashed values)
   emailOtpHash?: string;
@@ -57,6 +58,7 @@ const UserSchema: Schema = new Schema(
     companyName: { type: String },
     
     isEmailVerified: { type: Boolean, default: false },
+    onboardingCompleted: { type: Boolean, default: false },
     
     // OTPs (Stored as hashed values)
     emailOtpHash: { type: String },

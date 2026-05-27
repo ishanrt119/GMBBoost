@@ -28,14 +28,14 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-24 px-6 relative overflow-hidden">
+    <section className="py-24 px-6 relative overflow-hidden bg-white">
       {/* Connector Line (Desktop) */}
-      <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent hidden lg:block -translate-y-12" />
+      <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent hidden lg:block -translate-y-12" />
 
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">How It Works</h2>
-          <p className="text-white/60 max-w-2xl mx-auto text-lg">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">How It Works</h2>
+          <p className="text-slate-500 max-w-2xl mx-auto text-lg">
             Four simple steps to transform your local presence.
           </p>
         </div>
@@ -51,20 +51,20 @@ export function HowItWorks() {
               className="relative flex flex-col items-center text-center group"
             >
               {/* Step Number */}
-              <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/40">
+              <div className="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-xs font-bold text-slate-400">
                 0{idx + 1}
               </div>
 
-              <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300 shadow-[0_0_40px_rgba(139,92,246,0.1)]">
+              <div className="w-20 h-20 rounded-3xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-8 group-hover:bg-indigo-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
                 <step.icon className="w-8 h-8 text-primary" />
               </div>
 
-              <h3 className="text-xl font-bold mb-4">{step.title}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{step.description}</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">{step.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">{step.description}</p>
               
               {/* Connector dots for mobile/tablet */}
               {idx < steps.length - 1 && (
-                <div className="lg:hidden w-px h-12 bg-gradient-to-b from-white/10 to-transparent my-4" />
+                <div className="lg:hidden w-px h-12 bg-gradient-to-b from-slate-200 to-transparent my-4" />
               )}
             </motion.div>
           ))}

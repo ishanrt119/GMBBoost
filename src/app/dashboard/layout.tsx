@@ -9,7 +9,7 @@ export default function DashboardLayout({
 }) {
   return (
     <BusinessProvider>
-      <div className="min-h-screen bg-[#030014] flex overflow-hidden">
+      <div className="min-h-screen bg-slate-50 flex overflow-hidden">
         <Sidebar />
         <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-64">
           <DashboardHeader />

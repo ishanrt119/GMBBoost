@@ -75,18 +75,18 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2 text-white">Dashboard Overview</h1>
-          <p className="text-white/40">Here's what's happening with your business profiles across MongoDB.</p>
+          <h1 className="text-3xl font-bold mb-2 text-slate-900">Dashboard Overview</h1>
+          <p className="text-slate-500">Here's what's happening with your business profiles across MongoDB.</p>
         </div>
         <div className="flex gap-4">
-          <Link href="/crm" className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)]">
+          <Link href="/dashboard/crm" className="bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-sm">
             <MessageCircle className="w-4 h-4" />
             AI WhatsApp CRM
           </Link>
-          <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]">
+          <Link href="/dashboard/audit" className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-sm">
             <Search className="w-4 h-4" />
             Run AI GMB Audit
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -98,21 +98,21 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="glass-dark p-6 rounded-[24px] border border-white/10 hover:border-white/20 transition-all"
+            className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm hover:border-slate-300 transition-all"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-white/5 text-white/60">
+              <div className="p-2 rounded-lg bg-slate-50 text-slate-500">
                 {idx === 0 && <Search className="w-4 h-4" />}
                 {idx === 1 && <Star className="w-4 h-4" />}
                 {idx === 2 && <Users className="w-4 h-4" />}
                 {idx === 3 && <Clock className="w-4 h-4" />}
               </div>
-              <div className={`text-xs font-bold px-2 py-1 rounded-lg ${stat.trending ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-400"}`}>
+              <div className={`text-xs font-bold px-2 py-1 rounded-lg ${stat.trending ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
                 {stat.change}
               </div>
             </div>
-            <div className="text-2xl font-bold mb-1 text-white">{stat.value}</div>
-            <div className="text-xs text-white/40 font-medium">{stat.label}</div>
+            <div className="text-2xl font-bold mb-1 text-slate-900">{stat.value}</div>
+            <div className="text-xs text-slate-400 font-medium">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -120,32 +120,32 @@ export default function Dashboard() {
       {/* Main Section: Pipeline & Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Lead Pipeline */}
-        <div className="lg:col-span-8 glass-dark rounded-[32px] border border-white/10 p-8">
+        <div className="lg:col-span-8 bg-white shadow-sm rounded-[32px] border border-slate-200 p-8">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-white">Recent Leads (MongoDB)</h3>
-            <Link href="/crm" className="text-primary text-sm font-bold hover:underline">View Pipeline</Link>
+            <h3 className="text-xl font-bold text-slate-900">Recent Leads (MongoDB)</h3>
+            <Link href="/dashboard/crm" className="text-primary text-sm font-bold hover:underline">View Pipeline</Link>
           </div>
           <div className="space-y-4">
             {data.leads.length === 0 ? (
-              <p className="text-white/40 text-sm">No leads found in database.</p>
+              <p className="text-slate-500 text-sm">No leads found in database.</p>
             ) : (
               data.leads.slice(0, 5).map((lead: any, i: number) => (
-                <div key={lead._id || i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
+                <div key={lead._id || i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all group">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                    <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold border border-indigo-100">
                       {lead.name ? lead.name.substring(0, 2).toUpperCase() : "??"}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white">{lead.name}</div>
-                      <div className="text-[10px] text-white/40">Status: {lead.status}</div>
+                      <div className="text-sm font-bold text-slate-900">{lead.name}</div>
+                      <div className="text-[10px] text-slate-500">Status: {lead.status}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-[10px] font-bold">
+                    <div className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
                       {lead.source}
                     </div>
                     <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreVertical className="w-4 h-4 text-white/40" />
+                      <MoreVertical className="w-4 h-4 text-slate-400" />
                     </button>
                   </div>
                 </div>
@@ -156,25 +156,25 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="glass-dark rounded-[32px] border border-white/10 p-8 bg-gradient-to-br from-primary/10 to-transparent">
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mb-6">
-              <TrendingUp className="text-white w-6 h-6" />
+          <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8 bg-gradient-to-br from-indigo-50/50 to-transparent">
+            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+              <TrendingUp className="text-primary w-6 h-6" />
             </div>
-            <h4 className="text-lg font-bold mb-2 text-white">Avg Growth Score: {avgScore || 0}/100</h4>
-            <p className="text-xs text-white/40 leading-relaxed mb-6">
+            <h4 className="text-lg font-bold mb-2 text-slate-900">Avg Growth Score: {avgScore || 0}/100</h4>
+            <p className="text-xs text-slate-500 leading-relaxed mb-6">
               Based on {data.audits.length} recent audits stored in your Atlas database.
             </p>
             <ul className="space-y-3 mb-6">
-              <li className="flex items-center gap-2 text-[10px] text-white/60">
-                <CheckCircle2 className="w-3 h-3 text-green-500" />
+              <li className="flex items-center gap-2 text-[10px] text-slate-600">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                 Cloud connected successfully
               </li>
-              <li className="flex items-center gap-2 text-[10px] text-white/60">
-                <CheckCircle2 className="w-3 h-3 text-green-500" />
+              <li className="flex items-center gap-2 text-[10px] text-slate-600">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                 Mongoose models loaded
               </li>
             </ul>
-            <button className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold hover:scale-[1.02] transition-all">
+            <button className="w-full py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-md">
               View All Reports
             </button>
           </div>

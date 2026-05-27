@@ -453,3 +453,18 @@ export const processPublishPostJob = inngest.createFunction(
   }
 );
 
+// 7. Generate Audit Job
+export const generateAuditJob = inngest.createFunction(
+  { id: 'generate-audit', triggers: [{ event: 'audit/generate.requested' }] },
+  async ({ event, step }) => {
+    const { auditId } = event.data;
+
+    await step.run('process-audit', async () => {
+      // Lazy load to avoid circular dependencies or heavy initialization if not needed
+      const { processAuditJob } = await import('@/services/audit/auditService');
+      await processAuditJob(auditId);
+    });
+    
+    return { success: true, auditId };
+  }
+);

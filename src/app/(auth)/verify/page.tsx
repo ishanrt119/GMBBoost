@@ -70,18 +70,18 @@ function VerifyContent() {
   };
 
   if (!email) {
-    return <div className="text-white p-8 text-center">Missing email parameter. Return to register.</div>;
+    return <div className="text-slate-900 p-8 text-center">Missing email parameter. Return to register.</div>;
   }
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl max-w-md w-full mx-auto">
-      <h2 className="text-2xl font-semibold text-white mb-2">Verify Your Email</h2>
-      <p className="text-white/60 mb-6 text-sm">We sent a verification code to {email}</p>
+    <div className="bg-white border border-slate-200 shadow-xl rounded-2xl p-8 max-w-md w-full mx-auto">
+      <h2 className="text-2xl font-semibold text-slate-900 mb-2">Verify Your Email</h2>
+      <p className="text-slate-500 mb-6 text-sm">We sent a verification code to {email}</p>
 
       <div className="space-y-6">
-        <div className="p-4 rounded-xl border border-white/10 bg-black/20">
+        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-white font-medium">Email Verification</h3>
+            <h3 className="text-slate-900 font-medium">Email Verification</h3>
             {!emailVerified && (
               <button 
                 onClick={handleResend}
@@ -102,7 +102,7 @@ function VerifyContent() {
               <input
                 type="text"
                 placeholder="6-digit code"
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-white/30 focus:outline-none focus:border-primary text-sm tracking-widest text-center"
+                className="flex-1 bg-white border border-slate-200 shadow-sm rounded-lg px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary text-sm tracking-widest text-center"
                 maxLength={6}
                 value={emailOtp}
                 onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}

@@ -33,21 +33,21 @@ export function FAQ() {
   return (
     <section id="faq" className="py-24 px-6 max-w-3xl mx-auto">
       <div className="text-center mb-16">
-        <h2 className="text-3xl md:text-5xl font-bold mb-6">Frequently Asked <span className="text-gradient">Questions</span></h2>
+        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Questions</span></h2>
       </div>
 
       <div className="space-y-4">
         {faqs.map((faq, idx) => (
           <div 
             key={idx} 
-            className="border border-white/10 rounded-2xl overflow-hidden bg-white/[0.02]"
+            className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm"
           >
             <button
               onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-              className="w-full p-6 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors"
+              className="w-full p-6 flex items-center justify-between text-left hover:bg-slate-50 transition-colors text-slate-900"
             >
               <span className="font-bold">{faq.question}</span>
-              {openIndex === idx ? <Minus className="text-primary" /> : <Plus className="text-white/40" />}
+              {openIndex === idx ? <Minus className="text-primary" /> : <Plus className="text-slate-400" />}
             </button>
             
             <AnimatePresence>
@@ -58,7 +58,7 @@ export function FAQ() {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="p-6 pt-0 text-white/50 text-sm leading-relaxed border-t border-white/5">
+                  <div className="p-6 pt-0 text-slate-500 text-sm leading-relaxed border-t border-slate-100">
                     {faq.answer}
                   </div>
                 </motion.div>

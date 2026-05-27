@@ -77,8 +77,8 @@ export default function CRMPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-black/95">
-        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      <div className="flex items-center justify-center h-screen bg-white">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
@@ -86,8 +86,8 @@ export default function CRMPage() {
   return (
     <div className="p-8 max-h-screen overflow-hidden flex flex-col">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">AI CRM Pipeline</h1>
-        <p className="text-gray-400">Track and manage your automated leads.</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">AI CRM Pipeline</h1>
+        <p className="text-slate-500">Track and manage your automated leads.</p>
       </div>
 
       <div className="flex-1 overflow-x-auto">
@@ -100,15 +100,15 @@ export default function CRMPage() {
             {COLUMNS.map((col) => (
               <div key={col} className="w-80 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-white/90">{col}</h3>
-                  <span className="text-xs bg-white/10 px-2 py-1 rounded-full text-white/70">
+                  <h3 className="font-semibold text-slate-900">{col}</h3>
+                  <span className="text-xs bg-slate-100 border border-slate-200 px-2 py-1 rounded-full text-slate-600">
                     {leads.filter((l) => l.status === col).length}
                   </span>
                 </div>
                 
                 <div 
                   id={col}
-                  className="flex-1 min-h-[500px] bg-white/5 rounded-xl p-3 border border-white/10"
+                  className="flex-1 min-h-[500px] bg-slate-50/50 rounded-xl p-3 border border-slate-200"
                 >
                   {leads
                     .filter((l) => l.status === col)
@@ -116,27 +116,27 @@ export default function CRMPage() {
                       <div
                         key={lead._id}
                         id={lead._id}
-                        className="bg-black/40 border border-white/10 p-4 rounded-lg mb-3 cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors"
+                        className="bg-white border border-slate-200 shadow-sm p-4 rounded-lg mb-3 cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors"
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <User className="w-4 h-4 text-emerald-400" />
-                          <span className="text-sm font-medium text-white">{lead.name}</span>
+                          <User className="w-4 h-4 text-emerald-600" />
+                          <span className="text-sm font-medium text-slate-900">{lead.name}</span>
                         </div>
-                        <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+                        <div className="flex items-center gap-2 mb-3 text-xs text-slate-500">
                           <Phone className="w-3 h-3" />
                           <span>{lead.phone}</span>
                         </div>
                         {lead.aiSummary && (
-                          <div className="flex items-start gap-2 mt-3 pt-3 border-t border-white/10 text-xs text-gray-300">
-                            <BrainCircuit className="w-3 h-3 text-blue-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
+                            <BrainCircuit className="w-3 h-3 text-primary shrink-0 mt-0.5" />
                             <p className="line-clamp-2">{lead.aiSummary}</p>
                           </div>
                         )}
                         <div className="mt-3 flex justify-between items-center text-[10px]">
-                          <span className="px-2 py-1 bg-white/10 rounded text-gray-300">
+                          <span className="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-slate-600 font-medium">
                             Intent: {lead.intentScore}%
                           </span>
-                          <span className="text-gray-500">
+                          <span className="text-slate-400">
                             {new Date(lead.updatedAt).toLocaleDateString()}
                           </span>
                         </div>

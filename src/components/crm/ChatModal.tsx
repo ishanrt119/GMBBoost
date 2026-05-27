@@ -17,7 +17,7 @@ export default function ChatModal({ lead, onClose }: any) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversations]);
 
-  const fetchConversations = async () => {
+  async function fetchConversations() {
     try {
       const res = await fetch(`/api/conversations/${lead._id}`);
       const data = await res.json();
@@ -56,35 +56,35 @@ export default function ChatModal({ lead, onClose }: any) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-[#0f0f13] border border-white/10 w-full max-w-2xl h-[80vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl"
+          className="bg-white border border-slate-200 w-full max-w-2xl h-[80vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl"
         >
           {/* Header */}
-          <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
+          <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center text-purple-400 font-bold text-lg border border-purple-500/20">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center text-purple-600 font-bold text-lg border border-purple-500/20">
                 {lead.name.substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <h2 className="font-bold text-lg">{lead.name}</h2>
-                <div className="text-sm text-white/40">{lead.phone} • {lead.status}</div>
+                <h2 className="font-bold text-lg text-slate-900">{lead.name}</h2>
+                <div className="text-sm text-slate-500">{lead.phone} • {lead.status}</div>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
-              <X className="w-5 h-5 text-white/60" />
+              <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth bg-gradient-to-b from-transparent to-black/20">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth bg-gradient-to-b from-transparent to-slate-50/50">
             {loading ? (
               <div className="flex h-full items-center justify-center">
                 <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
               </div>
             ) : conversations.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-white/40 text-sm">
+              <div className="flex h-full items-center justify-center text-slate-400 text-sm">
                 No conversation history yet.
               </div>
             ) : (
@@ -97,12 +97,12 @@ export default function ChatModal({ lead, onClose }: any) {
                   <div key={msg._id} className={`flex ${isAI || isSystem ? 'justify-start' : 'justify-end'}`}>
                     <div className={`max-w-[80%] flex gap-3 ${isAI || isSystem ? 'flex-row' : 'flex-row-reverse'}`}>
                       <div className="flex-shrink-0 mt-auto">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${isAI ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : isSystem ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-white/10 border-white/20 text-white/60'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${isAI ? 'bg-purple-100 border-purple-200 text-purple-600' : isSystem ? 'bg-orange-100 border-orange-200 text-orange-600' : 'bg-slate-100 border-slate-200 text-slate-500'}`}>
                           {isSystem ? <AlertCircle className="w-4 h-4" /> : isAI ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
                         </div>
                       </div>
                       <div>
-                        <div className={`p-4 rounded-2xl text-sm ${isAI ? 'bg-white/10 rounded-bl-sm text-white/90' : isSystem ? 'bg-orange-500/10 text-orange-200 rounded-bl-sm border border-orange-500/20' : 'bg-purple-600 rounded-br-sm text-white'}`}>
+                        <div className={`p-4 rounded-2xl text-sm ${isAI ? 'bg-slate-100 rounded-bl-sm text-slate-900 border border-slate-200' : isSystem ? 'bg-orange-50 text-orange-800 rounded-bl-sm border border-orange-200' : 'bg-purple-600 rounded-br-sm text-white shadow-sm'}`}>
                           {isMedia ? (
                             <div className="flex items-center gap-2 italic opacity-80">
                               <ImageIcon className="w-4 h-4" />
@@ -112,7 +112,7 @@ export default function ChatModal({ lead, onClose }: any) {
                             msg.message
                           )}
                         </div>
-                        <div className={`text-[10px] text-white/30 mt-2 font-medium ${isAI || isSystem ? 'text-left' : 'text-right'}`}>
+                        <div className={`text-[10px] text-slate-400 mt-2 font-medium ${isAI || isSystem ? 'text-left' : 'text-right'}`}>
                           {format(new Date(msg.timestamp), 'h:mm a')}
                         </div>
                       </div>
@@ -125,14 +125,14 @@ export default function ChatModal({ lead, onClose }: any) {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-white/10 bg-white/[0.02]">
+          <div className="p-4 border-t border-slate-200 bg-slate-50">
             <form onSubmit={handleSend} className="relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Reply directly (simulated)..."
-                className="w-full bg-white/5 border border-white/10 rounded-full py-4 pl-6 pr-14 text-sm focus:outline-none focus:border-purple-500/50 transition-colors placeholder:text-white/30"
+                className="w-full bg-white border border-slate-200 rounded-full py-4 pl-6 pr-14 text-sm text-slate-900 focus:outline-none focus:border-purple-500 transition-colors placeholder:text-slate-400 shadow-sm"
               />
               <button
                 type="submit"

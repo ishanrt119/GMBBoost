@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const replyStatus = searchParams.get("replyStatus");
     const sentiment = searchParams.get("sentiment");
     
-    let query: any = {};
+    const query: any = {};
     if (businessId) query.businessId = businessId;
     if (replyStatus) query.replyStatus = replyStatus;
     if (sentiment) query.sentiment = sentiment;

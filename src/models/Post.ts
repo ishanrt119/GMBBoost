@@ -1,6 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPost extends Document {
+  tenantId?: string;
+  organizationId?: string;
   title?: string;
   businessId: mongoose.Types.ObjectId;
   userId?: mongoose.Types.ObjectId;
@@ -22,12 +24,15 @@ export interface IPost extends Document {
   publishedAt?: Date;
   failureReason?: string;
   retryCount: number;
+  aiMetadata?: any;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const PostSchema: Schema = new Schema(
   {
+    tenantId: { type: String, index: true },
+    organizationId: { type: String, index: true },
     title: { type: String },
     businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -49,6 +54,7 @@ const PostSchema: Schema = new Schema(
     publishedAt: { type: Date },
     failureReason: { type: String },
     retryCount: { type: Number, default: 0 },
+    aiMetadata: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
 );

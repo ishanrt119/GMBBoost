@@ -15,8 +15,7 @@ fetchScheduledPosts();
 
 },[]);
 
-const fetchScheduledPosts =
-async()=>{
+async function fetchScheduledPosts(){
 
 try{
 
@@ -70,10 +69,10 @@ posts.length === 0 ? (
 
 <div
 className="
-bg-white/5 border border-white/10 backdrop-blur-md
+bg-white border border-slate-200
 rounded-3xl
 p-10
-shadow-md
+shadow-sm
 text-center
 "
 >
@@ -82,7 +81,7 @@ text-center
 className="
 text-2xl
 font-semibold
-text-white
+text-slate-900
 mb-3
 "
 >
@@ -91,7 +90,7 @@ No Scheduled Posts
 
 </h2>
 
-<p className="text-white/60">
+<p className="text-slate-500">
 
 Your scheduled posts
 will appear here.
@@ -110,11 +109,11 @@ posts.map((post)=>(
 <div
 key={post.id}
 className="
-bg-white/5 border border-white/10 backdrop-blur-md
+bg-white border border-slate-200
 rounded-3xl
 p-6
-shadow-md
-hover:shadow-xl
+shadow-sm
+hover:shadow-md
 transition
 "
 >
@@ -133,7 +132,7 @@ items-start
 className="
 text-2xl
 font-semibold
-text-white
+text-slate-900
 "
 >
 
@@ -143,7 +142,7 @@ text-white
 
 <p
 className="
-text-white/60
+text-slate-600
 mt-3
 leading-relaxed
 "
@@ -159,7 +158,7 @@ flex
 gap-6
 mt-5
 text-sm
-text-white/40
+text-slate-500
 "
 >
 

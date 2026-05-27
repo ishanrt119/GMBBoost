@@ -19,7 +19,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-sm font-medium text-primary mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-medium text-indigo-600 mb-8 shadow-sm"
         >
           <Sparkles className="w-4 h-4" />
           <span>AI-Powered Google Business Growth Platform</span>
@@ -29,17 +29,17 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-8 leading-[1.1]"
+          className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.1]"
         >
           Scale Your Local Business <br />
-          <span className="text-gradient">With AI Intelligence</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">With AI Intelligence</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-12 leading-relaxed"
+          className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-12 leading-relaxed"
         >
           Automate your Google Business Profile, generate more reviews, convert leads instantly, and grow local visibility using AI + WhatsApp automation.
         </motion.p>
@@ -50,12 +50,12 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
         >
-          <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-105 transition-all shadow-[0_0_30px_rgba(139,92,246,0.4)]">
+          <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20">
             Start Free Audit
             <ArrowRight className="w-5 h-5" />
           </Link>
-          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-white/10 hover:scale-105 transition-all backdrop-blur-sm">
-            <Play className="w-5 h-5 fill-white" />
+          <button className="w-full sm:w-auto px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
+            <Play className="w-5 h-5 text-slate-400" />
             Watch Demo
           </button>
         </motion.div>
@@ -67,51 +67,51 @@ export function Hero() {
           transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
           className="relative max-w-5xl mx-auto"
         >
-          <div className="relative glass-dark rounded-t-3xl border-t border-x border-white/10 p-4 pb-0 overflow-hidden shadow-2xl">
+          <div className="relative bg-slate-50/50 backdrop-blur-xl rounded-t-3xl border-t border-x border-slate-200 p-4 pb-0 overflow-hidden shadow-2xl">
             <div className="flex items-center gap-2 mb-4 px-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/50" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-              <div className="w-3 h-3 rounded-full bg-green-500/50" />
-              <div className="ml-4 px-3 py-1 rounded-lg bg-white/5 text-[10px] text-white/40">gmb-boost.ai/dashboard</div>
+              <div className="w-3 h-3 rounded-full bg-slate-300" />
+              <div className="w-3 h-3 rounded-full bg-slate-300" />
+              <div className="w-3 h-3 rounded-full bg-slate-300" />
+              <div className="ml-4 px-3 py-1 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-500 shadow-sm">gmb-boost.ai/dashboard</div>
             </div>
             
-            <div className="grid grid-cols-12 gap-4 h-[400px] md:h-[600px]">
+            <div className="grid grid-cols-12 gap-4 h-[400px] md:h-[600px] bg-white rounded-t-2xl border-t border-x border-slate-100 shadow-sm">
               {/* Sidebar Mock */}
-              <div className="col-span-2 border-r border-white/5 p-4 hidden md:block">
+              <div className="col-span-2 border-r border-slate-100 p-4 hidden md:block">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-8 w-full bg-white/5 rounded-lg mb-4" />
+                  <div key={i} className="h-8 w-full bg-slate-50 rounded-lg mb-4 border border-slate-100" />
                 ))}
               </div>
               
               {/* Content Mock */}
               <div className="col-span-12 md:col-span-10 p-6 text-left">
                 <div className="flex items-center justify-between mb-8">
-                  <div className="h-8 w-48 bg-white/10 rounded-xl" />
-                  <div className="h-10 w-32 bg-primary/20 border border-primary/30 rounded-xl" />
+                  <div className="h-8 w-48 bg-slate-100 rounded-xl" />
+                  <div className="h-10 w-32 bg-indigo-50 border border-indigo-100 rounded-xl" />
                 </div>
                 
                 <div className="grid grid-cols-3 gap-6 mb-8">
-                  <div className="h-32 bg-white/5 rounded-2xl border border-white/10 p-4">
-                    <div className="h-4 w-20 bg-white/10 rounded mb-4" />
-                    <div className="h-8 w-24 bg-white/20 rounded" />
+                  <div className="h-32 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <div className="h-4 w-20 bg-slate-100 rounded mb-4" />
+                    <div className="h-8 w-24 bg-slate-200 rounded" />
                   </div>
-                  <div className="h-32 bg-white/5 rounded-2xl border border-white/10 p-4">
-                    <div className="h-4 w-20 bg-white/10 rounded mb-4" />
-                    <div className="h-8 w-24 bg-white/20 rounded" />
+                  <div className="h-32 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <div className="h-4 w-20 bg-slate-100 rounded mb-4" />
+                    <div className="h-8 w-24 bg-slate-200 rounded" />
                   </div>
-                  <div className="h-32 bg-white/5 rounded-2xl border border-white/10 p-4">
-                    <div className="h-4 w-20 bg-white/10 rounded mb-4" />
-                    <div className="h-8 w-24 bg-white/20 rounded" />
+                  <div className="h-32 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <div className="h-4 w-20 bg-slate-100 rounded mb-4" />
+                    <div className="h-8 w-24 bg-slate-200 rounded" />
                   </div>
                 </div>
                 
-                <div className="h-64 bg-white/5 rounded-3xl border border-white/10 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent" />
+                <div className="h-64 bg-slate-50 rounded-3xl border border-slate-200 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-50/50 to-transparent" />
                   <div className="p-6">
-                    <div className="h-4 w-32 bg-white/10 rounded mb-6" />
+                    <div className="h-4 w-32 bg-slate-200 rounded mb-6" />
                     <div className="flex items-end gap-2 h-32">
                       {[40, 70, 45, 90, 65, 80, 50, 85, 30, 95].map((h, i) => (
-                        <div key={i} className="flex-1 bg-primary/40 rounded-t-sm" style={{ height: `${h}%` }} />
+                        <div key={i} className="flex-1 bg-indigo-400 rounded-t-sm" style={{ height: `${h}%` }} />
                       ))}
                     </div>
                   </div>
@@ -123,15 +123,15 @@ export function Hero() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-20 right-[-20px] md:right-10 p-4 glass rounded-2xl border border-white/20 shadow-xl hidden sm:block"
+              className="absolute top-20 right-[-20px] md:right-10 p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl hidden sm:block"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-green-500" />
+                <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-white/40">New Lead via WhatsApp</div>
-                  <div className="text-xs font-bold">Conversion Rate +24%</div>
+                  <div className="text-[10px] text-slate-500 font-medium">New Lead via WhatsApp</div>
+                  <div className="text-xs font-bold text-slate-900">Conversion Rate +24%</div>
                 </div>
               </div>
             </motion.div>
@@ -139,15 +139,15 @@ export function Hero() {
             <motion.div
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute bottom-20 left-[-20px] md:left-10 p-4 glass rounded-2xl border border-white/20 shadow-xl hidden sm:block"
+              className="absolute bottom-20 left-[-20px] md:left-10 p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl hidden sm:block"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">
                   ★
                 </div>
                 <div>
-                  <div className="text-[10px] text-white/40">Review Auto-Replied</div>
-                  <div className="text-xs font-bold">5-Star Feedback Posted</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Review Auto-Replied</div>
+                  <div className="text-xs font-bold text-slate-900">5-Star Feedback Posted</div>
                 </div>
               </div>
             </motion.div>

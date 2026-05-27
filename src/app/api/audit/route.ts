@@ -1,35 +1,51 @@
-import { NextResponse } from "next/server";
-import { runFullAudit } from "@/services/audit-engine";
-import dbConnect from "@/lib/mongodb";
-import Audit from "@/models/Audit";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import dbConnect from '@/lib/mongodb';
+import Audit from '@/models/Audit';
+import { processAuditJob } from '@/services/audit/auditService';
 
-export const dynamic = "force-dynamic";
+const auditRequestSchema = z.object({
+  businessName: z.string().min(2, 'Business name is too short'),
+  location: z.string().min(2, 'Location is too short'),
+  gbpUrl: z.string().url().optional().or(z.literal('')),
+});
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { query } = await request.json();
+    const body = await req.json();
+    const parsed = auditRequestSchema.safeParse(body);
 
-    if (!query) {
-      return NextResponse.json(
-        { error: "Business query or URL is required" },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.errors }, { status: 400 });
     }
 
-    // Runs audit, fetches Google Maps data, analyzes with AI, and stores in MongoDB
-    const audit = await runFullAudit(query);
+    const { businessName, location, gbpUrl } = parsed.data;
 
-    return NextResponse.json(audit);
-  } catch (error: any) {
-    console.error("Audit API Error Details:", {
-      message: error.message,
-      status: error.response?.status,
+    await dbConnect();
+
+    // Mock tenant data (in a real app, extract from auth token/session)
+    const tenantId = 'demo-tenant';
+    const userId = 'demo-user';
+    const organizationId = 'demo-org';
+
+    // Create a pending audit
+    const audit = await Audit.create({
+      tenantId,
+      userId,
+      organizationId,
+      businessName,
+      location,
+      gbpUrl: gbpUrl || undefined,
+      status: 'PENDING',
     });
-    
-    return NextResponse.json(
-      { error: error.message || "Failed to run audit" },
-      { status: 500 }
-    );
+
+    // Process the audit synchronously instead of using Inngest
+    await processAuditJob(audit._id.toString());
+
+    return NextResponse.json({ success: true, auditId: audit._id }, { status: 201 });
+  } catch (error: any) {
+    console.error('Failed to create audit request:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -38,14 +54,10 @@ export async function GET(request: Request) {
     await dbConnect();
     
     const { searchParams } = new URL(request.url);
-    const businessId = searchParams.get("businessId");
+    const tenantId = searchParams.get("tenantId") || "demo-tenant";
     
-    let audits;
-    if (businessId) {
-      audits = await Audit.find({ businessId }).sort({ createdAt: -1 }).populate('businessId');
-    } else {
-      audits = await Audit.find({}).sort({ createdAt: -1 }).populate('businessId');
-    }
+    // Return audits for a given tenant
+    const audits = await Audit.find({ tenantId }).sort({ createdAt: -1 });
 
     return NextResponse.json(audits);
   } catch (error: any) {

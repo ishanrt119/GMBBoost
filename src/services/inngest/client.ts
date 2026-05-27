@@ -29,6 +29,9 @@ type Events = {
   "scheduler/publish-post": {
     data: { postId: string };
   };
+  "audit/generate.requested": {
+    data: { auditId: string };
+  };
 };
 
 export const inngest = new Inngest({ id: "gmb-optimization-platform", schemas: { events: {} as Events } });

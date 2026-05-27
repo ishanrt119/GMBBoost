@@ -22,8 +22,7 @@ function MyPosts() {
 
   }, []);
 
-  const fetchPosts =
-    async () => {
+  async function fetchPosts() {
 
       try {
 
@@ -75,17 +74,17 @@ function MyPosts() {
 
             <div
               className="
-              bg-white/5 border border-white/10 backdrop-blur-md
+              bg-white border border-slate-200
               rounded-3xl
               p-10
-              shadow-md
+              shadow-sm
               text-center
               "
             >
 
               <h2
                 className="
-                text-2xl font-semibold text-white
+                text-2xl font-semibold text-slate-900
                 mb-3
                 "
               >
@@ -94,7 +93,7 @@ function MyPosts() {
 
               </h2>
 
-              <p className="text-white/60">
+              <p className="text-slate-500">
 
                 Your created posts
                 will appear here.
@@ -114,11 +113,11 @@ function MyPosts() {
                   <div
                     key={post.id}
                     className="
-                    bg-white/5 border border-white/10 backdrop-blur-md
+                    bg-white border border-slate-200
                     rounded-3xl
                     p-6
-                    shadow-md
-                    hover:shadow-xl
+                    shadow-sm
+                    hover:shadow-md
                     transition
                     "
                   >
@@ -135,7 +134,7 @@ function MyPosts() {
 
                         <h2
                           className="
-                          text-2xl font-semibold text-white
+                          text-2xl font-semibold text-slate-900
                           "
                         >
 
@@ -145,7 +144,7 @@ function MyPosts() {
 
                         <p
                           className="
-                          text-white/60
+                          text-slate-600
                           mt-3
                           leading-relaxed
                           "
@@ -158,7 +157,7 @@ function MyPosts() {
                         <p
                           className="
                           text-sm
-                          text-white/40
+                          text-slate-500
                           mt-4
                           "
                         >

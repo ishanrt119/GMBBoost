@@ -1,18 +1,55 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export function proxy(request: NextRequest) {
+// Define which paths require which modules
+const moduleRoutes: Record<string, string[]> = {
+  '/dashboard/audit': ['google_ranking_agent'],
+  '/dashboard/content': ['content_studio'],
+  '/dashboard/reviews': ['reputation_agent'],
+  '/dashboard/crm': ['sales_agent'], // Lead manager
+  '/dashboard/campaigns': ['marketing_automation'],
+  '/dashboard/upload': ['marketing_automation', 'reputation_agent'],
+  '/dashboard/posts': ['content_studio', 'marketing_automation'],
+};
+
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
-  // Public routes that do not require authentication
-  const isPublicRoute = path === '/' || path.startsWith('/login') || path.startsWith('/register') || path.startsWith('/verify') || path.startsWith('/api/auth') || path.startsWith('/api/inngest') || path.startsWith('/api/webhook');
   const isProtectedRoute = path.startsWith('/dashboard');
-  
   const token = request.cookies.get('auth_token')?.value;
 
   // Protect dashboard routes
-  if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (isProtectedRoute) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
+      const { payload } = await jwtVerify(token, secret);
+      
+      const activeModules = (payload.activeModules as string[]) || [];
+      const onboardingCompleted = payload.onboardingCompleted as boolean;
+
+      // Force onboarding
+      if (!onboardingCompleted && path !== '/dashboard/onboarding') {
+        return NextResponse.redirect(new URL('/dashboard/onboarding', request.url));
+      }
+
+      // Check module access
+      const requiredModules = moduleRoutes[path];
+      if (requiredModules) {
+        const hasAccess = requiredModules.some(m => activeModules.includes(m));
+        if (!hasAccess) {
+          // Redirect to an upgrade/locked page
+          return NextResponse.redirect(new URL('/dashboard/upgrade?module=' + requiredModules[0], request.url));
+        }
+      }
+
+    } catch (error) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   // Prevent logged-in users from accessing login/register pages

@@ -252,10 +252,10 @@ return(
 <form
 onSubmit={handleSubmit}
 className="
-bg-white/5 border border-white/10 backdrop-blur-md
+bg-white border border-slate-200
 rounded-3xl
 p-8
-shadow-md
+shadow-sm
 space-y-6
 "
 >
@@ -265,7 +265,7 @@ space-y-6
 <label
 className="
 block
-text-white/60
+text-slate-600
 mb-2
 "
 >
@@ -284,13 +284,14 @@ required
 className="
 w-full
 border
-border-white/10
+border-slate-200
 rounded-2xl
 p-4
 outline-none
 focus:border-primary
-bg-black/20
-text-white
+bg-slate-50
+text-slate-900
+shadow-sm
 "
 />
 
@@ -301,7 +302,7 @@ text-white
 <label
 className="
 block
-text-white/60
+text-slate-600
 mb-2
 "
 >
@@ -320,13 +321,14 @@ required
 className="
 w-full
 border
-border-white/10
+border-slate-200
 rounded-2xl
 p-4
 outline-none
 focus:border-primary
-bg-black/20
-text-white
+bg-slate-50
+text-slate-900
+shadow-sm
 "
 />
 
@@ -337,7 +339,7 @@ text-white
 <label
 className="
 block
-text-white/60
+text-slate-600
 mb-2
 "
 >
@@ -354,14 +356,15 @@ onChange={handleChange}
 className="
 w-full
 border
-border-white/10
+border-slate-200
 rounded-2xl
 p-4
 outline-none
 focus:border-primary
-bg-black/20
-text-white
-[color-scheme:dark]
+bg-slate-50
+text-slate-900
+shadow-sm
+[color-scheme:light]
 "
 />
 
@@ -441,7 +444,7 @@ aiLoading
 
 export default function CreatePost() {
   return (
-    <Suspense fallback={<div className="p-10 text-white">Loading post data...</div>}>
+    <Suspense fallback={<div className="p-10 text-slate-500">Loading post data...</div>}>
       <CreatePostContent />
     </Suspense>
   );

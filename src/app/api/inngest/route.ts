@@ -11,7 +11,8 @@ import {
   reviewAutopollCron,
   processReviewAutopollJob,
   publishScheduledPostsCron,
-  processPublishPostJob
+  processPublishPostJob,
+  generateAuditJob
 } from "@/services/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -27,6 +28,7 @@ export const { GET, POST, PUT } = serve({
     reviewAutopollCron,
     processReviewAutopollJob,
     publishScheduledPostsCron,
-    processPublishPostJob
+    processPublishPostJob,
+    generateAuditJob
   ],
 });

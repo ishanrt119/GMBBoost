@@ -79,10 +79,10 @@ export default function ReviewsPage() {
       <div className="max-w-6xl mx-auto space-y-10">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold mb-2 text-white">Reviews Tracker</h1>
-            <p className="text-white/40">Monitor, edit, and approve AI replies for Google reviews</p>
+            <h1 className="text-3xl font-bold mb-2 text-slate-900">Reviews Tracker</h1>
+            <p className="text-slate-500">Monitor, edit, and approve AI replies for Google reviews</p>
           </div>
-          <button onClick={triggerMonitor} className="flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm">
+          <button onClick={triggerMonitor} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl transition-all font-medium text-sm shadow-sm">
             <RefreshCcw size={16} /> Poll New Reviews
           </button>
         </div>
@@ -95,21 +95,21 @@ export default function ReviewsPage() {
           <>
             {/* Stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm">
-                <div className="text-3xl font-bold text-white">{stats?.totalReviews || reviews.length || 0}</div>
-                <div className="text-xs text-white/40 mt-2 font-medium">Total Reviews</div>
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+                <div className="text-3xl font-bold text-slate-900">{stats?.totalReviews || reviews.length || 0}</div>
+                <div className="text-xs text-slate-500 mt-2 font-medium">Total Reviews</div>
               </div>
-              <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm">
-                <div className="text-3xl font-bold text-yellow-500">{reviews.filter(r => r.replyStatus === 'PENDING').length}</div>
-                <div className="text-xs text-white/40 mt-2 font-medium">Pending AI Replies</div>
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+                <div className="text-3xl font-bold text-amber-500">{reviews.filter(r => r.replyStatus === 'PENDING').length}</div>
+                <div className="text-xs text-slate-500 mt-2 font-medium">Pending AI Replies</div>
               </div>
-              <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm">
-                <div className="text-3xl font-bold text-green-400">{reviews.filter(r => r.replyStatus === 'APPROVED').length}</div>
-                <div className="text-xs text-white/40 mt-2 font-medium">Ready to Post</div>
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+                <div className="text-3xl font-bold text-emerald-600">{reviews.filter(r => r.replyStatus === 'APPROVED').length}</div>
+                <div className="text-xs text-slate-500 mt-2 font-medium">Ready to Post</div>
               </div>
-              <div className="glass-dark border border-white/10 rounded-2xl p-6 text-center shadow-sm flex flex-col justify-center items-center">
-                <div className="text-4xl font-black text-yellow-500">{stats?.averageRating || 0}</div>
-                <div className="text-xs text-white/40 mt-2 font-medium">Average Google Rating</div>
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm flex flex-col justify-center items-center">
+                <div className="text-4xl font-black text-amber-500">{stats?.averageRating || 0}</div>
+                <div className="text-xs text-slate-500 mt-2 font-medium">Average Google Rating</div>
               </div>
             </div>
 
@@ -119,34 +119,34 @@ export default function ReviewsPage() {
                 const id = r._id || r.id;
                 const isEditing = editingId === id;
                 return (
-                  <div key={id} className="glass-dark border border-white/10 rounded-[24px] p-6 shadow-sm flex flex-col gap-4">
+                  <div key={id} className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm flex flex-col gap-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-bold text-lg text-white mb-1">
+                        <h3 className="font-bold text-lg text-slate-900 mb-1">
                           {r.reviewer || (r.customer ? `${r.customer.firstName} ${r.customer.lastName || ''}` : 'Unknown')}
                         </h3>
                         <div className="flex items-center gap-3">
-                          <span className="text-yellow-500 text-lg tracking-widest">{'★'.repeat(r.rating || 0)}</span>
-                          <span className="text-xs text-white/40 font-medium">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</span>
+                          <span className="text-amber-500 text-lg tracking-widest">{'★'.repeat(r.rating || 0)}</span>
+                          <span className="text-xs text-slate-400 font-medium">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</span>
                           {r.sentiment && (
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${r.sentiment === 'positive' ? 'bg-green-500/10 text-green-400' : r.sentiment === 'negative' || r.sentiment === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-400'}`}>
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${r.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' : r.sentiment === 'negative' || r.sentiment === 'critical' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
                               {r.sentiment}
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${r.replyStatus === 'APPROVED' ? 'bg-green-500/10 text-green-400' : r.replyStatus === 'POSTED' ? 'bg-blue-500/10 text-blue-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${r.replyStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : r.replyStatus === 'POSTED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
                           {r.replyStatus || 'PENDING'}
                         </span>
                       </div>
                     </div>
 
-                    <p className="text-white/70 text-sm leading-relaxed">
-                      {r.reviewText || r.text || <span className="italic text-white/30">No review text provided.</span>}
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      {r.reviewText || r.text || <span className="italic text-slate-400">No review text provided.</span>}
                     </p>
 
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-xs font-bold text-primary tracking-wide">AI SUGGESTED REPLY</p>
                       </div>
@@ -157,35 +157,35 @@ export default function ReviewsPage() {
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
                             rows={3}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm text-white outline-none focus:border-primary transition-all resize-none"
+                            className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-900 outline-none focus:border-primary transition-all resize-none shadow-sm"
                           />
                           <div className="flex gap-2 justify-end">
-                            <button onClick={cancelEdit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-white/60 hover:text-white transition-all">
+                            <button onClick={cancelEdit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-500 hover:text-slate-900 transition-all shadow-sm">
                               Cancel
                             </button>
-                            <button onClick={() => approveReply(id, editText)} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                            <button onClick={() => approveReply(id, editText)} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-sm">
                               Save & Approve
                             </button>
                           </div>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-3">
-                          <p className="text-sm text-white/80 leading-relaxed">
-                            {r.aiSuggestedReply || <span className="italic text-white/30">No AI reply generated yet.</span>}
+                          <p className="text-sm text-slate-700 leading-relaxed">
+                            {r.aiSuggestedReply || <span className="italic text-slate-400">No AI reply generated yet.</span>}
                           </p>
                           <div className="flex gap-2 mt-2">
                             {r.replyStatus === 'PENDING' && (
                               <>
-                                <button onClick={() => startEditing(r)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-white hover:bg-white/10 transition-all">
+                                <button onClick={() => startEditing(r)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
                                   <Edit3 size={14} /> Edit
                                 </button>
-                                <button onClick={() => approveReply(id)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-all">
+                                <button onClick={() => approveReply(id)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
                                   <CheckCircle size={14} /> Approve
                                 </button>
                               </>
                             )}
                             {r.replyStatus === 'APPROVED' && (
-                              <button onClick={() => postReply(id)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                              <button onClick={() => postReply(id)} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-sm">
                                 Post to Google
                               </button>
                             )}
@@ -198,7 +198,7 @@ export default function ReviewsPage() {
               })}
 
               {!reviews.length && (
-                <div className="glass-dark border border-white/10 rounded-[24px] p-12 text-center text-white/40 text-sm">
+                <div className="bg-white border border-slate-200 shadow-sm rounded-[24px] p-12 text-center text-slate-500 text-sm">
                   No reviews tracked yet.
                 </div>
               )}

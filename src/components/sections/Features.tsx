@@ -67,8 +67,8 @@ export function Features() {
   return (
     <section id="features" className="py-24 px-6 max-w-7xl mx-auto">
       <div className="text-center mb-20">
-        <h2 className="text-3xl md:text-5xl font-bold mb-6">Everything You Need to <span className="text-gradient">Dominate Local Search</span></h2>
-        <p className="text-white/60 max-w-2xl mx-auto text-lg">
+        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">Everything You Need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Dominate Local Search</span></h2>
+        <p className="text-slate-500 max-w-2xl mx-auto text-lg">
           Our AI engine handles the heavy lifting, so you can focus on running your business.
         </p>
       </div>
@@ -82,19 +82,19 @@ export function Features() {
             transition={{ duration: 0.5, delay: idx * 0.1 }}
             viewport={{ once: true }}
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
-            className="group p-8 rounded-3xl bg-white/[0.03] border border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all relative overflow-hidden"
+            className="group p-8 rounded-3xl bg-white shadow-sm border border-slate-200 hover:border-primary/30 hover:shadow-md transition-all relative overflow-hidden"
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
             <div className={`w-12 h-12 rounded-2xl ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
               <feature.icon className="w-6 h-6" />
             </div>
             
-            <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">{feature.title}</h3>
-            <p className="text-white/50 text-sm leading-relaxed">{feature.description}</p>
+            <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-primary transition-colors">{feature.title}</h3>
+            <p className="text-slate-500 text-sm leading-relaxed">{feature.description}</p>
             
             {/* Hover Glow */}
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-primary/10 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-primary/5 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.div>
         ))}
       </div>
