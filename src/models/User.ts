@@ -12,6 +12,11 @@ export interface IUser extends Document {
   isEmailVerified: boolean;
   onboardingCompleted: boolean;
   
+  // Platform context
+  organizationId?: mongoose.Types.ObjectId;
+  activeBusinessId?: mongoose.Types.ObjectId;
+  subscriptionPlan?: string;
+  
   // OTP Fields (Hashed values)
   emailOtpHash?: string;
   emailOtpExpiry?: Date;
@@ -59,6 +64,11 @@ const UserSchema: Schema = new Schema(
     
     isEmailVerified: { type: Boolean, default: false },
     onboardingCompleted: { type: Boolean, default: false },
+    
+    // Platform context
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization' },
+    activeBusinessId: { type: Schema.Types.ObjectId, ref: 'Business' },
+    subscriptionPlan: { type: String, default: 'Free' },
     
     // OTPs (Stored as hashed values)
     emailOtpHash: { type: String },

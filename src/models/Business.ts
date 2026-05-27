@@ -18,6 +18,7 @@ export interface IBusiness extends Document {
   googleConnected: boolean;
   keywords: string[];
   competitors: mongoose.Types.ObjectId[];
+  organizationId: mongoose.Types.ObjectId;
   userId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -42,6 +43,7 @@ const BusinessSchema: Schema = new Schema(
     googleConnected: { type: Boolean, default: false },
     keywords: [{ type: String }],
     competitors: [{ type: Schema.Types.ObjectId, ref: 'Business' }],
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
