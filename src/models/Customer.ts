@@ -1,36 +1,50 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICustomer extends Document {
-  businessId?: mongoose.Types.ObjectId;
-  firstName: string;
-  lastName?: string;
+  tenantId: string;
+  businessId: mongoose.Types.ObjectId;
+  name: string;
   phone?: string;
   email?: string;
   service?: string;
-  visitDate?: Date;
-  channel: 'WHATSAPP' | 'EMAIL' | 'SMS';
-  source: 'CSV' | 'MANUAL' | 'CRM_HUBSPOT' | 'CRM_SALESFORCE' | 'CRM_ZOHO';
-  isDuplicate: boolean;
-  reviewStatus: string;
+  serviceDate?: Date;
+  tags: string[];
+  notes?: string;
+  optedOut: boolean;
+  reviewStatus: 'Pending' | 'Requested' | 'Completed' | 'Failed';
+  totalMessagesSent: number;
+  lastMessageAt?: Date;
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const CustomerSchema: Schema = new Schema(
+const CustomerSchema = new Schema(
   {
-    businessId: { type: Schema.Types.ObjectId, ref: 'Business', index: true },
-    firstName: { type: String, required: true },
-    lastName: { type: String },
-    phone: { type: String },
+    tenantId: { type: String, required: true },
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true },
+    name: { type: String, required: true },
+    phone: { type: String }, // Stored as standard +1234567890 if available
     email: { type: String },
     service: { type: String },
-    visitDate: { type: Date },
-    channel: { type: String, enum: ['WHATSAPP', 'EMAIL', 'SMS'], default: 'WHATSAPP' },
-    source: { type: String, enum: ['CSV', 'MANUAL', 'CRM_HUBSPOT', 'CRM_SALESFORCE', 'CRM_ZOHO'], default: 'MANUAL' },
-    isDuplicate: { type: Boolean, default: false },
-    reviewStatus: { type: String, enum: ['none', 'requested', 'reviewed'], default: 'none' },
+    serviceDate: { type: Date },
+    tags: [{ type: String }],
+    notes: { type: String },
+    optedOut: { type: Boolean, default: false },
+    reviewStatus: { 
+      type: String, 
+      enum: ['Pending', 'Requested', 'Completed', 'Failed'], 
+      default: 'Pending' 
+    },
+    totalMessagesSent: { type: Number, default: 0 },
+    lastMessageAt: { type: Date },
+    metadata: { type: Schema.Types.Mixed }
   },
   { timestamps: true }
 );
+
+// Compound index to prevent duplicate imports per business
+CustomerSchema.index({ businessId: 1, phone: 1 }, { unique: true, partialFilterExpression: { phone: { $exists: true, $ne: null } } });
+CustomerSchema.index({ businessId: 1, email: 1 }, { unique: true, partialFilterExpression: { email: { $exists: true, $ne: null } } });
 
 export default mongoose.models.Customer || mongoose.model<ICustomer>('Customer', CustomerSchema);

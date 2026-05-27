@@ -1,52 +1,48 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IReviewRequest extends Document {
-  campaignId?: mongoose.Types.ObjectId;
+  tenantId: string;
+  businessId: mongoose.Types.ObjectId;
   customerId: mongoose.Types.ObjectId;
-  channel: 'WHATSAPP' | 'EMAIL' | 'SMS';
-  status: 'QUEUED' | 'SENT' | 'CLICKED' | 'REVIEWED' | 'FAILED' | 'UNSUBSCRIBED';
+  channel: 'whatsapp' | 'email';
+  message: string;
+  status: 'Pending' | 'Sent' | 'Delivered' | 'Failed' | 'Cancelled';
   sentAt?: Date;
+  clicked: boolean;
   clickedAt?: Date;
-  reviewedAt?: Date;
-  failedAt?: Date;
-  failReason?: string;
-  reminder1SentAt?: Date;
-  reminder2SentAt?: Date;
-  
-  // Legacy fields preserved for compatibility
-  messageStatus?: string;
-  reminderCount?: number;
-  clicked?: boolean;
-  reviewed?: boolean;
-  
+  reviewReceived: boolean;
+  rating?: number;
+  followUpStage: number; // 0=Initial, 1=Reminder 1, 2=Reminder 2
+  automationStatus: 'Active' | 'Completed' | 'Stopped';
+  inngestEventId?: string; // To allow cancellation
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ReviewRequestSchema: Schema = new Schema(
+const ReviewRequestSchema = new Schema(
   {
-    campaignId: { type: Schema.Types.ObjectId, ref: 'Campaign', index: true },
-    customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
-    channel: { type: String, enum: ['WHATSAPP', 'EMAIL', 'SMS'], default: 'WHATSAPP' },
+    tenantId: { type: String, required: true },
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true },
+    customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+    channel: { type: String, enum: ['whatsapp', 'email'], required: true },
+    message: { type: String, required: true },
     status: { 
       type: String, 
-      enum: ['QUEUED', 'SENT', 'CLICKED', 'REVIEWED', 'FAILED', 'UNSUBSCRIBED'], 
-      default: 'QUEUED',
-      index: true
+      enum: ['Pending', 'Sent', 'Delivered', 'Failed', 'Cancelled'], 
+      default: 'Pending' 
     },
     sentAt: { type: Date },
-    clickedAt: { type: Date },
-    reviewedAt: { type: Date },
-    failedAt: { type: Date },
-    failReason: { type: String },
-    reminder1SentAt: { type: Date },
-    reminder2SentAt: { type: Date },
-
-    // Legacy fields
-    messageStatus: { type: String },
-    reminderCount: { type: Number, default: 0 },
     clicked: { type: Boolean, default: false },
-    reviewed: { type: Boolean, default: false },
+    clickedAt: { type: Date },
+    reviewReceived: { type: Boolean, default: false },
+    rating: { type: Number },
+    followUpStage: { type: Number, default: 0 },
+    automationStatus: {
+      type: String,
+      enum: ['Active', 'Completed', 'Stopped'],
+      default: 'Active'
+    },
+    inngestEventId: { type: String }
   },
   { timestamps: true }
 );

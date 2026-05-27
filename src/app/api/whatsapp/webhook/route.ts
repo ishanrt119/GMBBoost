@@ -4,6 +4,7 @@ import Lead from '@/models/Lead';
 import ConversationThread from '@/models/ConversationThread';
 import mongoose from 'mongoose';
 import { inngest } from '@/services/inngest/client';
+import Customer from '@/models/Customer';
 
 export async function POST(req: Request) {
   try {
@@ -62,6 +63,18 @@ export async function POST(req: Request) {
       thread.unreadCount += 1;
       thread.lastMessage = numMedia > 0 ? '[Media]' : body;
       thread.lastActivityAt = new Date();
+      await thread.save();
+    }
+
+    // 2.5 Opt-out processing (Module 9)
+    const normalizedBody = body.trim().toUpperCase();
+    if (['STOP', 'UNSUBSCRIBE', 'CANCEL'].includes(normalizedBody)) {
+      await Customer.findOneAndUpdate(
+        { phone, businessId },
+        { optedOut: true }
+      );
+      // We can also disable AI for the thread so the bot doesn't reply
+      thread.aiEnabled = false;
       await thread.save();
     }
 

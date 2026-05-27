@@ -381,65 +381,111 @@ export const processContentJob = inngest.createFunction(
   }
 );
 
-// 4. Review Campaigns
-export const startCampaign = inngest.createFunction(
-  { id: "start-campaign", triggers: [{ event: "campaign/start" }] },
+// 4. AI Review Campaigns (Module 9)
+export const processReviewCampaign = inngest.createFunction(
+  { id: "process-review-campaign", retries: 3, triggers: [{ event: "campaigns/review.request.start" }] },
   async ({ event, step }) => {
-    const { campaignId } = event.data;
-    
-    const customerIds = await step.run("fetch-campaign-customers", async () => {
-      await dbConnect();
-      const requests = await ReviewRequest.find({ campaignId, status: 'QUEUED' }).lean();
-      return requests.map(r => ({ campaignId, customerId: r.customerId.toString() }));
-    });
+    const { customerId, businessId, tenantId, channel } = event.data;
 
-    const events = customerIds.map(data => ({
-      name: "campaign/send-review-request",
-      data
-    }));
+    const dbConnect = (await import("@/lib/mongodb")).default;
+    await dbConnect();
 
-    // Dispatch thousands of SMS requests safely
-    if (events.length > 0) {
-      await step.sendEvent("dispatch-review-requests", events);
-    }
-    
-    return { success: true, dispatched: events.length };
-  }
-);
-
-export const sendReviewRequestJob = inngest.createFunction(
-  { id: "send-review-request-job", retries: 3, triggers: [{ event: "campaign/send-review-request" }] },
-  async ({ event, step }) => {
-    const { campaignId, customerId } = event.data;
-    
+    // 1. Fetch Customer & Validate
     const customer = await step.run("fetch-customer", async () => {
-      await dbConnect();
+      const { default: Customer } = await import("@/models/Customer");
       return await Customer.findById(customerId).lean();
     });
 
-    if (!customer) return;
+    if (!customer || customer.optedOut) return { skipped: true, reason: 'Customer opted out or not found' };
 
-    // Send SMS
-    await step.run("send-initial-request", async () => {
-      const msg = `Hi ${customer.firstName}, thanks for visiting us! We'd love it if you could leave a review: https://ourbusiness.com/go/${customerId}`;
-      await sendOutboundMessage(customer.phone, msg);
-      await ReviewRequest.findOneAndUpdate({ campaignId, customerId }, { status: 'SENT', sentAt: new Date() });
+    // 2. Generate AI Message
+    const aiMessage = await step.run("generate-ai-message", async () => {
+      const { Groq } = await import("groq-sdk");
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const prompt = `You are a customer success assistant. Write a short, warm, 2-sentence WhatsApp review request for ${customer.name}. Mention they recently got ${customer.service || 'our service'}. Ask them to leave a review using this link: https://gmbboost.com/api/campaigns/track/{{REQUEST_ID}}. Include: Reply STOP to opt-out.`;
+      
+      try {
+        const response = await groq.chat.completions.create({
+          messages: [{ role: 'system', content: prompt }],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.7,
+          max_tokens: 150,
+        });
+        return response.choices[0]?.message?.content?.trim() || "Hi! We'd love a review: https://gmbboost.com/api/campaigns/track/{{REQUEST_ID}}";
+      } catch (e) {
+        return "Hi! We'd love a review: https://gmbboost.com/api/campaigns/track/{{REQUEST_ID}} (Reply STOP to opt-out)";
+      }
     });
 
-    // Sleep for 2 days
-    await step.sleep("wait-for-click", "2d");
-
-    // Check if clicked
-    const clicked = await step.run("check-if-clicked", async () => {
-      const req = await ReviewRequest.findOne({ campaignId, customerId });
-      return req?.status === 'CLICKED' || req?.status === 'REVIEWED';
+    // 3. Create Request Log
+    const reviewRequest = await step.run("create-request-log", async () => {
+      const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+      const req = await ReviewRequest.create({
+        tenantId,
+        businessId,
+        customerId,
+        channel,
+        message: 'pending generation',
+        status: 'Pending'
+      });
+      req.message = aiMessage.replace('{{REQUEST_ID}}', req._id.toString());
+      await req.save();
+      return req.toObject();
     });
 
-    if (!clicked) {
-      await step.run("send-reminder", async () => {
-        const msg = `Hi ${customer.firstName}, just a quick reminder. We'd really appreciate a review of your last visit: https://ourbusiness.com/go/${customerId}`;
-        await sendOutboundMessage(customer.phone, msg);
-        await ReviewRequest.findOneAndUpdate({ campaignId, customerId }, { reminder1SentAt: new Date() });
+    // 4. Send Initial Message
+    await step.run("send-initial-message", async () => {
+      const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+      if (channel === 'whatsapp' && customer.phone) {
+        await sendOutboundMessage(customer.phone, reviewRequest.message);
+      }
+      await ReviewRequest.findByIdAndUpdate(reviewRequest._id, { status: 'Sent', sentAt: new Date(), followUpStage: 0 });
+    });
+
+    // 5. Wait 2 Days
+    await step.sleep("wait-2-days", "2d");
+
+    // 6. Check Status for Reminder 1
+    const shouldSendRem1 = await step.run("check-status-1", async () => {
+      const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+      const { default: Customer } = await import("@/models/Customer");
+      const req = await ReviewRequest.findById(reviewRequest._id);
+      const cust = await Customer.findById(customerId);
+      return !cust?.optedOut && !req?.clicked;
+    });
+
+    if (shouldSendRem1) {
+      await step.run("send-reminder-1", async () => {
+        const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+        const msg = `Hi ${customer.name}, just a quick reminder! We'd really appreciate a review of your recent ${customer.service || 'visit'}: https://gmbboost.com/api/campaigns/track/${reviewRequest._id}\nReply STOP to opt-out.`;
+        if (channel === 'whatsapp' && customer.phone) await sendOutboundMessage(customer.phone, msg);
+        await ReviewRequest.findByIdAndUpdate(reviewRequest._id, { followUpStage: 1 });
+      });
+    }
+
+    // 7. Wait 5 Days
+    await step.sleep("wait-5-days", "5d");
+
+    // 8. Check Status for Final Reminder
+    const shouldSendRem2 = await step.run("check-status-2", async () => {
+      const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+      const { default: Customer } = await import("@/models/Customer");
+      const req = await ReviewRequest.findById(reviewRequest._id);
+      const cust = await Customer.findById(customerId);
+      return !cust?.optedOut && !req?.clicked;
+    });
+
+    if (shouldSendRem2) {
+      await step.run("send-final-reminder", async () => {
+        const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+        const msg = `Hi ${customer.name}, last bother from us! If you have a minute, a review would mean the world to our team: https://gmbboost.com/api/campaigns/track/${reviewRequest._id}\nReply STOP to opt-out.`;
+        if (channel === 'whatsapp' && customer.phone) await sendOutboundMessage(customer.phone, msg);
+        await ReviewRequest.findByIdAndUpdate(reviewRequest._id, { followUpStage: 2, automationStatus: 'Completed' });
+      });
+    } else {
+      await step.run("mark-completed", async () => {
+        const { default: ReviewRequest } = await import("@/models/ReviewRequest");
+        await ReviewRequest.findByIdAndUpdate(reviewRequest._id, { automationStatus: 'Completed' });
       });
     }
 
