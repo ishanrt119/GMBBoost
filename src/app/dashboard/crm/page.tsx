@@ -1,152 +1,100 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import {
-  DndContext,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { Loader2, User, Phone, BrainCircuit } from "lucide-react";
-import { toast } from "react-hot-toast";
+import React, { useState, useEffect } from 'react';
+import CRMStatsRow from '@/components/crm/CRMStatsRow';
+import KanbanBoard from '@/components/crm/KanbanBoard';
+import LeadDrawer from '@/components/crm/LeadDrawer';
 
-const COLUMNS = [
-  "New",
-  "Contacted",
-  "Qualified",
-  "Interested",
-  "Booking Pending",
-  "Converted",
-  "Lost",
-];
-
-export default function CRMPage() {
+export default function CRMDashboard() {
   const [leads, setLeads] = useState<any[]>([]);
+  const [stats, setStats] = useState({ total: 0, converted: 0, conversionRate: 0, avgScore: 0 });
+  const [selectedLead, setSelectedLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  useEffect(() => {
-    fetchLeads();
-  }, []);
+  // Demo fallback ID
+  const businessId = '60b9b3b3b3b3b3b3b3b3b3b3';
 
   const fetchLeads = async () => {
     try {
-      const res = await fetch("/api/leads");
-      if (!res.ok) throw new Error("Failed to fetch leads");
+      const res = await fetch(`/api/crm/leads?businessId=${businessId}`);
       const data = await res.json();
-      setLeads(data);
-    } catch (err) {
-      toast.error("Error loading CRM data");
+      if (data.success) {
+        setLeads(data.leads);
+        
+        const total = data.leads.length;
+        const converted = data.leads.filter((l: any) => l.pipelineStage === 'Converted').length;
+        const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
+        
+        const scoredLeads = data.leads.filter((l: any) => l.aiLeadScore);
+        const avgScore = scoredLeads.length > 0 
+          ? Math.round(scoredLeads.reduce((acc: number, l: any) => acc + l.aiLeadScore, 0) / scoredLeads.length)
+          : 0;
+
+        setStats({ total, converted, conversionRate, avgScore });
+      }
+    } catch (e) {
+      console.error('Failed to fetch leads', e);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    
-    const leadId = active.id as string;
-    const newStatus = over.id as string;
-    
-    const lead = leads.find(l => l._id === leadId);
-    if (!lead || lead.status === newStatus) return;
+  useEffect(() => {
+    fetchLeads();
+  }, []);
 
-    // Optimistic update
-    setLeads(prev => prev.map(l => l._id === leadId ? { ...l, status: newStatus } : l));
-
+  const handleCreateDummyLead = async () => {
     try {
-      // In a real implementation we would have a PUT endpoint
-      // await fetch(`/api/leads/${leadId}`, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
-      toast.success(`Moved to ${newStatus}`);
-    } catch (err) {
-      toast.error("Failed to update status");
-      fetchLeads(); // Revert
+      const newLead = {
+        businessId,
+        name: 'John Smith',
+        phone: '+14155552671', // Standard dummy Twilio number formatting
+        source: 'Website',
+      };
+      
+      const res = await fetch('/api/crm/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead)
+      });
+      
+      if (res.ok) fetchLeads();
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading AI Lead Manager...</div>;
 
   return (
-    <div className="p-8 max-h-screen overflow-hidden flex flex-col">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">AI CRM Pipeline</h1>
-        <p className="text-slate-500">Track and manage your automated leads.</p>
-      </div>
-
-      <div className="flex-1 overflow-x-auto">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-6 pb-4" style={{ minWidth: "max-content" }}>
-            {COLUMNS.map((col) => (
-              <div key={col} className="w-80 flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-900">{col}</h3>
-                  <span className="text-xs bg-slate-100 border border-slate-200 px-2 py-1 rounded-full text-slate-600">
-                    {leads.filter((l) => l.status === col).length}
-                  </span>
-                </div>
-                
-                <div 
-                  id={col}
-                  className="flex-1 min-h-[500px] bg-slate-50/50 rounded-xl p-3 border border-slate-200"
-                >
-                  {leads
-                    .filter((l) => l.status === col)
-                    .map((lead) => (
-                      <div
-                        key={lead._id}
-                        id={lead._id}
-                        className="bg-white border border-slate-200 shadow-sm p-4 rounded-lg mb-3 cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <User className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm font-medium text-slate-900">{lead.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 mb-3 text-xs text-slate-500">
-                          <Phone className="w-3 h-3" />
-                          <span>{lead.phone}</span>
-                        </div>
-                        {lead.aiSummary && (
-                          <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
-                            <BrainCircuit className="w-3 h-3 text-primary shrink-0 mt-0.5" />
-                            <p className="line-clamp-2">{lead.aiSummary}</p>
-                          </div>
-                        )}
-                        <div className="mt-3 flex justify-between items-center text-[10px]">
-                          <span className="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-slate-600 font-medium">
-                            Intent: {lead.intentScore}%
-                          </span>
-                          <span className="text-slate-400">
-                            {new Date(lead.updatedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-slate-50/50 p-4 pt-10">
+      <div className="max-w-[1600px] mx-auto relative">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">AI Lead Manager</h1>
+            <p className="text-slate-500 mt-1">Intelligent CRM with automated follow-ups and LLaMA scoring.</p>
           </div>
-        </DndContext>
+          <button 
+            onClick={handleCreateDummyLead}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Dummy Lead
+          </button>
+        </div>
+
+        <CRMStatsRow stats={stats} />
+        
+        <KanbanBoard leads={leads} setLeads={setLeads} onLeadClick={setSelectedLead} />
+
+        <LeadDrawer 
+          lead={selectedLead} 
+          isOpen={!!selectedLead} 
+          onClose={() => setSelectedLead(null)}
+          onUpdate={fetchLeads}
+        />
       </div>
     </div>
   );

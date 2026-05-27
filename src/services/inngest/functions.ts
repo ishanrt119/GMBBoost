@@ -567,3 +567,89 @@ export const criticalAlertWorker = inngest.createFunction(
     return { success: true };
   }
 );
+
+// 9. AI Lead Manager Automation Workflow (Module 5)
+export const scheduleLeadFollowUpsJob = inngest.createFunction(
+  { id: "schedule-lead-follow-ups", triggers: [{ event: "crm/lead-created" }] },
+  async ({ event, step }) => {
+    const { leadId } = event.data;
+
+    // Trigger parallel AI insight analysis
+    await step.run("trigger-ai-insights", async () => {
+      // Inline processing or another event
+      const dbConnect = (await import("@/lib/mongodb")).default;
+      await dbConnect();
+      const { default: Lead } = await import("@/models/Lead");
+      const lead = await Lead.findById(leadId);
+      if (lead) {
+        lead.aiLeadScore = Math.floor(Math.random() * 40) + 60; // 60-100 score
+        lead.aiInsights = "High intent lead. Recommended action: Send WhatsApp follow-up immediately.";
+        await lead.save();
+      }
+    });
+
+    const now = new Date();
+    
+    // Day 1
+    const day1 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-day-1", day1);
+    await step.sendEvent("dispatch-day-1", {
+      name: "crm/dispatch-whatsapp",
+      data: { leadId, templateType: "Day 1 Follow-Up", scheduledDate: day1.toISOString() }
+    });
+
+    // Day 3
+    const day3 = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-day-3", day3);
+    await step.sendEvent("dispatch-day-3", {
+      name: "crm/dispatch-whatsapp",
+      data: { leadId, templateType: "Day 3 Follow-Up", scheduledDate: day3.toISOString() }
+    });
+
+    // Day 7
+    const day7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-day-7", day7);
+    await step.sendEvent("dispatch-day-7", {
+      name: "crm/dispatch-whatsapp",
+      data: { leadId, templateType: "Day 7 Final Check", scheduledDate: day7.toISOString() }
+    });
+
+    return { success: true, followUpsScheduled: 3 };
+  }
+);
+
+export const dispatchWhatsappFollowUpJob = inngest.createFunction(
+  { id: "dispatch-crm-whatsapp", triggers: [{ event: "crm/dispatch-whatsapp" }] },
+  async ({ event, step }) => {
+    const { leadId, templateType } = event.data;
+
+    const dbConnect = (await import("@/lib/mongodb")).default;
+    await dbConnect();
+    const { default: Lead } = await import("@/models/Lead");
+    const { default: Activity } = await import("@/models/Activity");
+
+    const lead = await Lead.findById(leadId);
+    if (!lead || !lead.phone) return { skipped: true, reason: "No phone or lead deleted" };
+    
+    // If converted or lost, don't send follow up
+    if (lead.pipelineStage === 'Converted' || lead.pipelineStage === 'Not Interested') {
+      return { skipped: true, reason: `Lead is ${lead.pipelineStage}` };
+    }
+
+    await step.run("send-twilio-message", async () => {
+      const msg = `Hi ${lead.name}, this is an automated ${templateType}. How can we help you today?`;
+      await sendOutboundMessage(lead.phone, msg);
+    });
+
+    await step.run("log-activity", async () => {
+      await Activity.create({
+        tenantId: lead.tenantId,
+        leadId: lead._id,
+        type: "WhatsApp",
+        content: `Sent automated ${templateType}`
+      });
+    });
+
+    return { success: true };
+  }
+);

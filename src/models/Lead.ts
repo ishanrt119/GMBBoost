@@ -1,77 +1,60 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ILead extends Document {
+  tenantId: string;
+  organizationId?: string;
+  businessId: mongoose.Types.ObjectId;
+  assignedUserId?: mongoose.Types.ObjectId;
+  
   name: string;
-  phone: string;
-  source: string;
-  status: 'New' | 'Contacted' | 'Qualified' | 'Interested' | 'Booking Pending' | 'Converted' | 'Lost';
-  
-  businessType?: string;
-  budget?: string;
-  urgency?: 'Low' | 'Medium' | 'High' | 'Urgent';
-  requirements?: string;
-  intentScore: number;
-  qualificationStatus: 'Unqualified' | 'Partially Qualified' | 'Qualified' | 'Sales Ready';
-  aiSummary?: string;
-  
-  bookingInterested?: boolean;
-  nextFollowUpDate?: Date;
-  conversionProbability?: number;
-  aiTags?: string[];
-  conversationStage?: string;
-
-  interest?: string;
+  email?: string;
+  phone?: string;
+  source: 'WhatsApp' | 'Website' | 'Manual' | 'Instagram' | 'Facebook' | 'Referral';
+  status: 'active' | 'inactive';
+  pipelineStage: 'New' | 'Contacted' | 'Qualified' | 'Interested' | 'Not Interested' | 'Converted';
+  tags: string[];
   notes?: string;
   
-  lastUserMessage?: string;
-  lastAIReply?: string;
-  retryCount: number;
-  lastInteractionTime?: Date;
+  followUpDates: Date[];
   
+  aiLeadScore?: number;
+  aiInsights?: string;
+  
+  lastActivityAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const LeadSchema: Schema = new Schema(
   {
-    name: { type: String, required: true },
-    phone: { type: String, required: true, index: true },
-    source: { type: String, default: 'WhatsApp' },
-    status: { 
-      type: String, 
-      enum: ['New', 'Contacted', 'Qualified', 'Interested', 'Booking Pending', 'Converted', 'Lost'], 
-      default: 'New', 
-      index: true 
-    },
+    tenantId: { type: String, required: true, index: true },
+    organizationId: { type: String, index: true },
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
+    assignedUserId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     
-    businessType: { type: String },
-    budget: { type: String },
-    urgency: { 
+    name: { type: String, required: true },
+    email: { type: String },
+    phone: { type: String },
+    source: { 
       type: String, 
-      enum: ['Low', 'Medium', 'High', 'Urgent']
+      enum: ['WhatsApp', 'Website', 'Manual', 'Instagram', 'Facebook', 'Referral'],
+      default: 'Manual'
     },
-    requirements: { type: String },
-    intentScore: { type: Number, default: 0 },
-    qualificationStatus: { 
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    pipelineStage: { 
       type: String, 
-      enum: ['Unqualified', 'Partially Qualified', 'Qualified', 'Sales Ready'],
-      default: 'Unqualified'
+      enum: ['New', 'Contacted', 'Qualified', 'Interested', 'Not Interested', 'Converted'],
+      default: 'New'
     },
-    aiSummary: { type: String },
-
-    bookingInterested: { type: Boolean, default: false },
-    nextFollowUpDate: { type: Date },
-    conversionProbability: { type: Number, default: 0 },
-    aiTags: [{ type: String }],
-    conversationStage: { type: String },
-
-    interest: { type: String },
+    tags: [{ type: String }],
     notes: { type: String },
     
-    lastUserMessage: { type: String },
-    lastAIReply: { type: String },
-    retryCount: { type: Number, default: 0 },
-    lastInteractionTime: { type: Date },
+    followUpDates: [{ type: Date }],
+    
+    aiLeadScore: { type: Number, min: 0, max: 100 },
+    aiInsights: { type: String },
+    
+    lastActivityAt: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );

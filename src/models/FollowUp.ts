@@ -1,18 +1,35 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IFollowUp extends Document {
+  tenantId: string;
+  organizationId?: string;
   leadId: mongoose.Types.ObjectId;
-  scheduledAt: Date;
-  completed: boolean;
-  reminderType: string;
+  
+  scheduledFor: Date;
+  status: 'pending' | 'completed' | 'skipped' | 'failed';
+  messageTemplate?: string;
+  
+  completedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const FollowUpSchema: Schema = new Schema(
   {
+    tenantId: { type: String, required: true, index: true },
+    organizationId: { type: String, index: true },
     leadId: { type: Schema.Types.ObjectId, ref: 'Lead', required: true, index: true },
-    scheduledAt: { type: Date, required: true },
-    completed: { type: Boolean, default: false },
-    reminderType: { type: String, required: true }
+    
+    scheduledFor: { type: Date, required: true, index: true },
+    status: { 
+      type: String, 
+      enum: ['pending', 'completed', 'skipped', 'failed'],
+      default: 'pending',
+      index: true
+    },
+    messageTemplate: { type: String },
+    
+    completedAt: { type: Date }
   },
   { timestamps: true }
 );

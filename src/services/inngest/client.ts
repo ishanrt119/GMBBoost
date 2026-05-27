@@ -41,6 +41,12 @@ type Events = {
   "reviews/critical-alert": {
     data: { businessId: string };
   };
+  "crm/lead-created": {
+    data: { leadId: string };
+  };
+  "crm/dispatch-whatsapp": {
+    data: { leadId: string; templateType: string; scheduledDate: string };
+  };
 };
 
 export const inngest = new Inngest({ 

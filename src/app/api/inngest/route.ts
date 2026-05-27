@@ -16,7 +16,9 @@ import {
   generateAuditJob,
   reviewSyncWorker,
   processReviewSyncJob,
-  criticalAlertWorker
+  criticalAlertWorker,
+  scheduleLeadFollowUpsJob,
+  dispatchWhatsappFollowUpJob
 } from "@/services/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -37,6 +39,8 @@ export const { GET, POST, PUT } = serve({
     generateAuditJob,
     reviewSyncWorker,
     processReviewSyncJob,
-    criticalAlertWorker
+    criticalAlertWorker,
+    scheduleLeadFollowUpsJob,
+    dispatchWhatsappFollowUpJob
   ],
 });
