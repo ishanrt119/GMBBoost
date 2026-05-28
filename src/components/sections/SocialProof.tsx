@@ -76,7 +76,7 @@ export function FinalCTA() {
             Join 500+ businesses already automating their growth. Start your 14-day free trial today.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 rounded-2xl font-bold hover:bg-slate-50 hover:scale-105 transition-all shadow-xl">
+            <Link href="/onboarding" className="w-full sm:w-auto px-10 py-5 bg-white text-slate-900 rounded-2xl font-bold hover:bg-slate-50 hover:scale-105 transition-all shadow-xl">
               Start Free Audit
             </Link>
             <Link href="/login" className="w-full sm:w-auto px-10 py-5 bg-slate-900/50 border border-white/20 text-white rounded-2xl font-bold hover:bg-slate-900/70 hover:scale-105 transition-all backdrop-blur-sm shadow-xl">
