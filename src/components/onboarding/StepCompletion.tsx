@@ -63,7 +63,7 @@ export default function StepCompletion({ data }: Props) {
         transition={{ delay: 0.4 }}
         className="text-lg text-slate-500 mb-10 max-w-md"
       >
-        We've successfully provisioned the <strong>{data.companyName || 'Acme'}</strong> organization and spun up your AI services.
+        We've successfully provisioned the <strong>{data.businessName || 'Acme'}</strong> organization and spun up your AI services.
       </motion.p>
 
       {error && (

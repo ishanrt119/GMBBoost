@@ -13,9 +13,14 @@ export interface OnboardingData {
   phone: string;
   address: string;
   website: string;
-  // Step 5
+  // Step 5 (Auto-filled from Step 4)
   googlePlaceId: string;
   gbpUrl: string;
+  latitude: number | null;
+  longitude: number | null;
+  googleMapsUrl: string;
+  rating: number;
+  totalReviews: number;
   // Step 6
   twilioSid: string;
   twilioAuthToken: string;
@@ -40,6 +45,11 @@ export const initialOnboardingData: OnboardingData = {
   website: '',
   googlePlaceId: '',
   gbpUrl: '',
+  latitude: null,
+  longitude: null,
+  googleMapsUrl: '',
+  rating: 0,
+  totalReviews: 0,
   twilioSid: '',
   twilioAuthToken: '',
   whatsappNumber: '',

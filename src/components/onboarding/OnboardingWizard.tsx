@@ -8,7 +8,6 @@ import { Rocket } from 'lucide-react';
 import StepWelcome from './StepWelcome';
 import StepAccount from './StepAccount';
 import StepPassword from './StepPassword';
-import StepOrganization from './StepOrganization';
 import StepBusiness from './StepBusiness';
 import StepGoogle from './StepGoogle';
 import StepWhatsApp from './StepWhatsApp';
@@ -31,7 +30,6 @@ export function OnboardingWizard() {
     { component: StepWelcome, id: 'welcome' },
     { component: StepAccount, id: 'account' },
     { component: StepPassword, id: 'password' },
-    { component: StepOrganization, id: 'org' },
     { component: StepBusiness, id: 'business' },
     { component: StepGoogle, id: 'google' },
     { component: StepWhatsApp, id: 'whatsapp' },
