@@ -20,7 +20,12 @@ export default function QuickPanels({ panels }: QuickPanelsProps) {
           <a href="/dashboard/crm" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">View All</a>
         </div>
         <div className="space-y-4">
-          {panels.recentLeads.length === 0 ? <p className="text-sm text-slate-500">No recent leads.</p> : null}
+          {panels.recentLeads.length === 0 ? (
+            <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-6 text-center mt-2">
+              <p className="text-sm font-medium text-slate-500 mb-2">No leads captured yet.</p>
+              <a href="/dashboard/crm" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Setup Lead Generation &rarr;</a>
+            </div>
+          ) : null}
           {panels.recentLeads.map((lead: any, i: number) => (
             <div key={i} className="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
               <div>
@@ -39,7 +44,12 @@ export default function QuickPanels({ panels }: QuickPanelsProps) {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <h3 className="font-bold text-slate-900 mb-6">AI Activity Feed</h3>
         <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-          {panels.activities.length === 0 ? <p className="text-sm text-slate-500 text-center relative z-10 bg-white">Quiet day for the AI.</p> : null}
+          {panels.activities.length === 0 ? (
+            <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-6 text-center relative z-10 mx-4">
+              <p className="text-sm font-medium text-slate-500 mb-2">Quiet day for the AI.</p>
+              <p className="text-xs text-slate-400">Activity will appear here when the AI interacts.</p>
+            </div>
+          ) : null}
           {panels.activities.map((act: any, i: number) => (
             <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active z-10 bg-white">
               <div className="flex items-center justify-center w-5 h-5 rounded-full border border-white bg-slate-100 text-slate-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm">
@@ -61,7 +71,12 @@ export default function QuickPanels({ panels }: QuickPanelsProps) {
           <a href="/dashboard/scheduler" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Calendar</a>
         </div>
         <div className="space-y-3">
-          {panels.calendar.length === 0 ? <p className="text-sm text-slate-500">Buffer is empty!</p> : null}
+          {panels.calendar.length === 0 ? (
+            <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-6 text-center mt-2">
+              <p className="text-sm font-medium text-slate-500 mb-2">Content buffer is empty!</p>
+              <a href="/dashboard/scheduler" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Generate AI Posts &rarr;</a>
+            </div>
+          ) : null}
           {panels.calendar.slice(0, 5).map((post: any, i: number) => (
             <div key={i} className="flex gap-3 items-start group">
               <div className="flex flex-col items-center bg-slate-50 rounded-lg p-2 min-w-[3rem] text-center border border-slate-100">

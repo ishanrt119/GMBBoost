@@ -15,7 +15,7 @@ export default function DashboardHeader({ businessName, onRefresh, lastRefreshed
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{businessName}</h1>
           <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">AI Active</span>
         </div>
-        <p className="text-sm text-slate-500">AI Command Center & Unified Analytics</p>
+        <p className="text-sm text-slate-500">Welcome back. Here is your AI Command Center & Unified Analytics.</p>
       </div>
 
       <div className="flex items-center gap-3">

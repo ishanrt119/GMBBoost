@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Review from '@/models/Review';
 import Post from '@/models/Post';
 import Activity from '@/models/Activity';
 import mongoose from 'mongoose';
-import { DEV_CONTEXT } from '@/lib/dev-context';
 
 export async function GET(req: Request) {
   try {
     await dbConnect();
     
-    const businessId = DEV_CONTEXT.businessId;
+    const cookieStore = await cookies();
+    const businessId = cookieStore.get('activeBusinessId')?.value;
+    
+    if (!businessId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const bid = new mongoose.Types.ObjectId(businessId);
 
     const thirtyDaysAgo = new Date();

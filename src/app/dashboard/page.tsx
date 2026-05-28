@@ -5,21 +5,21 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MetricsGrid from '@/components/dashboard/MetricsGrid';
 import ChartsSection from '@/components/dashboard/ChartsSection';
 import QuickPanels from '@/components/dashboard/QuickPanels';
+import { useBusiness } from '@/context/BusinessContext';
 
 export default function CommandCenter() {
+  const { activeBusiness, loading: contextLoading } = useBusiness();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  // In production, grab from auth context
-  const businessId = '60b9b3b3b3b3b3b3b3b3b3b3'; 
-
   const fetchStats = useCallback(async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
     
     try {
-      const res = await fetch(`/api/dashboard/stats?businessId=${businessId}`);
+      // Backend reads secure cookie automatically, no ?businessId needed
+      const res = await fetch(`/api/dashboard/stats`);
       const json = await res.json();
       if (json.success) {
         setData(json.data);
@@ -31,9 +31,10 @@ export default function CommandCenter() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [businessId]);
+  }, []);
 
   useEffect(() => {
+    if (!activeBusiness) return;
     fetchStats();
     
     // Auto-refresh every 5 minutes
@@ -42,9 +43,9 @@ export default function CommandCenter() {
     }, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [fetchStats]);
+  }, [fetchStats, activeBusiness]);
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center">
         <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
@@ -65,7 +66,7 @@ export default function CommandCenter() {
     <div className="min-h-screen bg-slate-50/50 p-4 sm:p-8 pt-10">
       <div className="max-w-[1600px] mx-auto">
         <DashboardHeader 
-          businessName="Demo Business" 
+          businessName={activeBusiness?.name || "Your Business"} 
           onRefresh={() => fetchStats(true)} 
           lastRefreshed={lastRefreshed}
           isRefreshing={refreshing}
