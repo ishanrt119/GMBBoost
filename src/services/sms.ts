@@ -1,21 +1,25 @@
 import twilio from 'twilio';
+import dbConnect from '@/lib/mongodb';
+import Business from '@/models/Business';
 
-const client = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
-
-export const sendSMS = async (to: string, customerName: string, service: string, reviewLink: string, businessName: string) => {
-  if (!client) {
-    console.warn('Twilio client not initialized (missing credentials). Mocking SMS send.');
+export const sendSMS = async (businessId: string, to: string, customerName: string, service: string, reviewLink: string, businessName: string) => {
+  await dbConnect();
+  const business = await Business.findById(businessId);
+  
+  if (!business || !business.integrations?.twilioSid || !business.integrations?.twilioAuthToken) {
+    console.warn(`Twilio client not initialized for business ${businessId}. Mocking SMS send.`);
     return { success: true, sid: 'mock_sid_sms' };
   }
+
+  const client = twilio(business.integrations.twilioSid, business.integrations.twilioAuthToken);
+  const fromNumber = business.integrations.whatsappNumber || process.env.TWILIO_FROM_NUMBER;
 
   try {
     const body = `Hi ${customerName}! Thank you for visiting ${businessName} for your ${service || 'visit'}. Would you mind leaving us a quick Google review? ${reviewLink} (Reply STOP to opt out)`;
 
     const msg = await client.messages.create({
       body,
-      from: process.env.TWILIO_FROM_NUMBER || '+1234567890',
+      from: fromNumber,
       to,
     });
 

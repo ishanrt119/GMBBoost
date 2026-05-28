@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import SessionProvider from "@/providers/SessionProvider";
+import { Toaster } from 'sonner';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -21,10 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.variable} ${inter.className} antialiased bg-[#030014]`}>
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+      <body className={`${inter.variable} ${inter.className} antialiased bg-slate-50 text-slate-900`}>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

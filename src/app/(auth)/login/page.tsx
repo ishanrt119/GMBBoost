@@ -1,6 +1,5 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -15,22 +14,12 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-
-    const res = await signIn('credentials', {
-      redirect: false,
-      email,
-      password
-    });
-
-    setLoading(false);
-
-    if (res?.error) {
-      setError('Invalid email or password');
-    } else {
+    
+    // DEV MODE BYPASS
+    setTimeout(() => {
       router.push('/dashboard');
       router.refresh();
-    }
+    }, 500);
   };
 
   return (

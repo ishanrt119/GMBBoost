@@ -1,14 +1,18 @@
 import twilio from 'twilio';
+import dbConnect from '@/lib/mongodb';
+import Business from '@/models/Business';
 
-const client = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
-
-export const sendWhatsApp = async (to: string, name: string, service: string, link: string, businessName: string) => {
-  if (!client) {
-    console.warn('Twilio client not initialized (missing credentials). Mocking WhatsApp send.');
+export const sendWhatsApp = async (businessId: string, to: string, name: string, service: string, link: string, businessName: string) => {
+  await dbConnect();
+  const business = await Business.findById(businessId);
+  
+  if (!business || !business.integrations?.twilioSid || !business.integrations?.twilioAuthToken) {
+    console.warn(`Twilio client not initialized for business ${businessId}. Mocking WhatsApp send.`);
     return { success: true, sid: 'mock_sid_whatsapp' };
   }
+
+  const client = twilio(business.integrations.twilioSid, business.integrations.twilioAuthToken);
+  const fromNumber = business.integrations.whatsappNumber || process.env.TWILIO_WHATSAPP_FROM;
 
   try {
     // Clean the number
@@ -28,7 +32,7 @@ export const sendWhatsApp = async (to: string, name: string, service: string, li
     const message = `Hi ${name}! 👋\n\nThank you for choosing ${businessName}! 💆\n\nWe hope you enjoyed ${service || 'your visit'}. We'd love to hear your feedback — please take a moment to leave us a review:\n\n⭐ ${link}\n\nYour review means a lot to us! 🙏\n— ${businessName} Team`;
 
     const response = await client.messages.create({
-      from: process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886',
+      from: `whatsapp:${fromNumber}`,
       to: `whatsapp:+${cleaned}`,
       body: message
     });

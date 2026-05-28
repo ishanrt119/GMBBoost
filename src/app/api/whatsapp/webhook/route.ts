@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     
     const messageSid = formData.get('MessageSid') as string;
     const from = formData.get('From') as string;
+    const toPayload = formData.get('To') as string;
     const body = formData.get('Body') as string;
     const profileName = formData.get('ProfileName') as string;
     const numMedia = parseInt(formData.get('NumMedia') as string || '0', 10);
@@ -20,13 +21,23 @@ export async function POST(req: Request) {
     if (!from) return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' }});
 
     const phone = from.replace('whatsapp:', '');
+    const toPhone = toPayload ? toPayload.replace('whatsapp:', '') : '';
     
-    // In production, you would map the incoming 'To' number to a specific tenant/business.
-    // For this module, we use the demo identifiers.
-    const tenantId = 'demo-tenant';
-    const businessId = new mongoose.Types.ObjectId('60b9b3b3b3b3b3b3b3b3b3b3');
-
     await dbConnect();
+    
+    // Dynamically lookup the tenant/business by the receiving Twilio/WhatsApp number
+    // We add a '+' back if it was stripped, or match the exact string format.
+    const business = await dbConnect().then(() => mongoose.model('Business').findOne({ 
+      'integrations.whatsappNumber': { $regex: new RegExp(toPhone.replace('+', ''), 'i') } 
+    }));
+
+    if (!business) {
+      console.error(`No business found mapped to WhatsApp number: ${toPayload}`);
+      return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', { status: 200, headers: { 'Content-Type': 'text/xml' }});
+    }
+
+    const tenantId = business.organizationId.toString();
+    const businessId = business._id;
 
     // 1. Fetch or Create Lead
     let lead = await Lead.findOne({ phone, businessId });

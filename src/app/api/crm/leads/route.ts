@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import { DEV_CONTEXT } from '@/lib/dev-context';
 import Activity from '@/models/Activity';
 import mongoose from 'mongoose';
 import { inngest } from '@/services/inngest/client';
@@ -8,9 +9,8 @@ import { inngest } from '@/services/inngest/client';
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const url = new URL(req.url);
-    const businessId = url.searchParams.get('businessId');
-    if (!businessId) return NextResponse.json({ error: 'businessId required' }, { status: 400 });
+    
+    const businessId = DEV_CONTEXT.businessId;
 
     const leads = await Lead.find({ businessId: new mongoose.Types.ObjectId(businessId) })
       .sort({ createdAt: -1 })
@@ -27,12 +27,14 @@ export async function POST(req: Request) {
     const data = await req.json();
     await dbConnect();
 
+    const businessId = DEV_CONTEXT.businessId;
+
     // Default to demo tenant for now
     const tenantId = data.tenantId || 'demo-tenant';
 
     const lead = await Lead.create({
       tenantId,
-      businessId: new mongoose.Types.ObjectId(data.businessId),
+      businessId: new mongoose.Types.ObjectId(businessId),
       name: data.name,
       phone: data.phone,
       email: data.email,

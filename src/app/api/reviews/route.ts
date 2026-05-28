@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Review from "@/models/Review";
+import { DEV_CONTEXT } from "@/lib/dev-context";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET(req: Request) {
   try {
     await dbConnect();
-    const { searchParams } = new URL(request.url);
-    const businessId = searchParams.get("businessId");
+    
+    const { searchParams } = new URL(req.url);
+    const businessId = DEV_CONTEXT.businessId;
     const replyStatus = searchParams.get("replyStatus");
     const sentiment = searchParams.get("sentiment");
     
-    const query: any = {};
-    if (businessId) query.businessId = businessId;
+    const query: any = { businessId };
     if (replyStatus) query.replyStatus = replyStatus;
     if (sentiment) query.sentiment = sentiment;
     

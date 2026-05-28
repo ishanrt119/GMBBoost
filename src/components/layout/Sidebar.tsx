@@ -14,12 +14,14 @@ import {
   Megaphone,
   UploadCloud,
   Star,
-  Clock
+  Clock,
+  ChevronDown,
+  Check
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { useBusiness } from "@/context/BusinessContext";
 
 const sidebarLinks = [
   { name: "Overview", icon: LayoutDashboard, href: "/dashboard" },
@@ -36,27 +38,14 @@ const sidebarLinks = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { businesses, activeBusiness, switchBusiness, loading } = useBusiness();
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+    router.push('/login');
   };
 
-  // Mock businesses for UI, in reality fetch from /api/user/businesses
-  const businesses = [
-    { id: '60b9b3b3b3b3b3b3b3b3b3b3', name: 'Demo Local Business' },
-    { id: '60b9b3b3b3b3b3b3b3b3b3b4', name: 'Secondary Location' }
-  ];
-
   const handleSwitchBusiness = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newId = e.target.value;
-    await update({ activeBusinessId: newId });
-    router.refresh(); // Refresh context
+    await switchBusiness(e.target.value);
   };
 
   return (
@@ -69,16 +58,16 @@ export function Sidebar() {
           <span className="text-lg font-bold tracking-tight text-slate-900">GMB<span className="text-primary">Boost</span></span>
         </Link>
 
-        {session && (
+        {!loading && businesses.length > 0 && (
           <div className="mb-6">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Active Business</label>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Active Workspace</label>
             <select 
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-primary focus:border-primary block p-2.5 font-medium cursor-pointer"
-              value={(session.user as any)?.activeBusinessId || businesses[0].id}
+              value={activeBusiness?._id || ''}
               onChange={handleSwitchBusiness}
             >
               {businesses.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
+                <option key={b._id} value={b._id}>{b.name}</option>
               ))}
             </select>
           </div>

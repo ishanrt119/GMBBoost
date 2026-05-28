@@ -14,13 +14,18 @@ import AutomationLog from "@/models/AutomationLog";
 import { generateSalesResponse } from "@/services/ai";
 import { generateAIContent } from "@/services/ai/contentEngine";
 import twilio from "twilio";
+import mongoose from "mongoose";
 
 const FALLBACK_MESSAGE = "I'm having a little trouble connecting to my brain right now. Please hold on or call our main line!";
 
 // Helper function to send outbound messages with Queue tracking
-async function sendOutboundMessage(phone: string, body: string, leadId?: string) {
-  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return;
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+async function sendOutboundMessage(phone: string, body: string, leadId?: string, businessId?: string) {
+  await dbConnect();
+  const business = await Business.findById(businessId);
+  if (!business?.integrations?.twilioSid || !business?.integrations?.twilioAuthToken) return;
+  
+  const client = twilio(business.integrations.twilioSid, business.integrations.twilioAuthToken);
+  const fromNumber = business.integrations.whatsappNumber || process.env.TWILIO_WHATSAPP_NUMBER;
   
   const msgLog = await MessageQueue.create({
     leadId,
@@ -32,7 +37,7 @@ async function sendOutboundMessage(phone: string, body: string, leadId?: string)
   try {
     await client.messages.create({
       body,
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      from: `whatsapp:${fromNumber}`,
       to: `whatsapp:${phone}`
     });
     msgLog.status = 'SENT';

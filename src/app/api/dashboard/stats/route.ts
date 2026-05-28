@@ -5,17 +5,13 @@ import Review from '@/models/Review';
 import Post from '@/models/Post';
 import Activity from '@/models/Activity';
 import mongoose from 'mongoose';
-import { getServerSession } from 'next-auth';
+import { DEV_CONTEXT } from '@/lib/dev-context';
 
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession();
-    if (!session || !(session.user as any)?.activeBusinessId) {
-      return NextResponse.json({ error: 'Unauthorized or no active business' }, { status: 401 });
-    }
-
     await dbConnect();
-    const businessId = (session.user as any).activeBusinessId;
+    
+    const businessId = DEV_CONTEXT.businessId;
     const bid = new mongoose.Types.ObjectId(businessId);
 
     const thirtyDaysAgo = new Date();

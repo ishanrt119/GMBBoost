@@ -1,162 +1,191 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2, Rocket } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
-import { Loader2, Mail, Lock, User, Phone, Building } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ 
-    fullName: '', 
-    email: '', 
-    countryCode: '+1',
-    phone: '', 
+  const [error, setError] = useState('');
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
     password: '',
-    companyName: ''
+    companyName: '',
+    businessName: '',
+    category: '',
+    address: '',
+    phone: '',
+    website: ''
   });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          phone: `${formData.countryCode}${formData.phone}`
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success(data.message);
-        router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
-      } else {
-        toast.error(data.error || 'Registration failed');
-      }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // BYPASS DEV MODE: Just route to dashboard immediately
+    setTimeout(() => {
+      router.push('/dashboard');
+      router.refresh();
+    }, 500);
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xl shadow-slate-200/50">
-      <h2 className="text-2xl font-semibold text-slate-900 mb-2">Create an account</h2>
-      <p className="text-slate-500 mb-6 text-sm">Start optimizing your Google Business Profile</p>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                placeholder="John Doe"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Company</label>
-            <div className="relative">
-              <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                placeholder="Acme Inc"
-                value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-              />
-            </div>
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-50">
+      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
+        <div className="flex justify-center mb-6">
+          <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center rotate-3">
+            <Rocket className="text-primary w-7 h-7" />
           </div>
         </div>
+        <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900">
+          Start Your SaaS Journey
+        </h2>
+        <p className="mt-2 text-center text-sm text-slate-500">
+          Create your organization and business workspace.
+        </p>
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="email"
-              required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-              placeholder="you@company.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-          </div>
-        </div>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
+        <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-100">
+          <form className="space-y-6" onSubmit={handleRegister}>
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100">
+                {error}
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Full Name</label>
+                <input
+                  name="fullName"
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Email Address</label>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                  placeholder="john@example.com"
+                />
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone Number (For SMS AI)</label>
-          <div className="flex gap-2">
-            <select
-              className="w-[100px] bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-slate-900 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none cursor-pointer text-center"
-              value={formData.countryCode}
-              onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Organization Name</label>
+                <input
+                  name="companyName"
+                  type="text"
+                  required
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                  placeholder="Acme Corp"
+                />
+              </div>
+            </div>
+
+            <hr className="border-slate-100" />
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">Business/Location Name</label>
+              <input
+                name="businessName"
+                type="text"
+                required
+                value={formData.businessName}
+                onChange={handleChange}
+                className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                placeholder="Acme HQ Downtown"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Category</label>
+                <input
+                  name="category"
+                  type="text"
+                  required
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                  placeholder="e.g. Real Estate"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">Phone</label>
+                <input
+                  name="phone"
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">Address</label>
+              <input
+                name="address"
+                type="text"
+                required
+                value={formData.address}
+                onChange={handleChange}
+                className="appearance-none block w-full px-4 py-3 rounded-xl border border-slate-200 shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-slate-900"
+                placeholder="123 Main St, City, State"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="+1" className="bg-white">🇺🇸 +1</option>
-              <option value="+44" className="bg-white">🇬🇧 +44</option>
-              <option value="+91" className="bg-white">🇮🇳 +91</option>
-              <option value="+61" className="bg-white">🇦🇺 +61</option>
-            </select>
-            <div className="relative flex-1">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="tel"
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                placeholder="1234567890"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
-              />
-            </div>
-          </div>
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Workspace'}
+            </button>
+            
+            <p className="text-center text-sm text-slate-500 font-medium">
+              Already have an account? <Link href="/login" className="text-primary hover:underline">Sign In</Link>
+            </p>
+          </form>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="password"
-              required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-              placeholder="Min 8 chars, 1 uppercase, 1 special"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-6 text-sm"
-        >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
-        </button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-slate-500">
-        Already have an account?{' '}
-        <Link href="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
-          Sign in
-        </Link>
-      </p>
+      </div>
     </div>
   );
 }

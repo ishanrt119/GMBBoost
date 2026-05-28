@@ -36,13 +36,14 @@ export async function POST(request: Request) {
     const name = customer.firstName || 'Customer';
     const bizName = business.name || 'Our Business';
     const service = customer.service || 'visit';
+    const businessId = business._id;
 
     if (channel === 'WHATSAPP' && customer.phone) {
-      sendResult = await sendWhatsApp(customer.phone, name, service, reviewLink, bizName);
+      sendResult = await sendWhatsApp(businessId.toString(), customer.phone, name, service, reviewLink, bizName);
     } else if (channel === 'EMAIL' && customer.email) {
       sendResult = await sendEmail(customer.email, name, service, reviewLink, bizName, reviewRequest._id.toString());
     } else if (channel === 'SMS' && customer.phone) {
-      sendResult = await sendSMS(customer.phone, name, service, reviewLink, bizName);
+      sendResult = await sendSMS(businessId.toString(), customer.phone, name, service, reviewLink, bizName);
     } else {
       sendResult = { success: false, error: 'Missing contact info for channel' };
     }

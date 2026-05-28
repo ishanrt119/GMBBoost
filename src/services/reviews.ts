@@ -1,5 +1,6 @@
 import dbConnect from '@/lib/mongodb';
 import Review from '@/models/Review';
+import Business from '@/models/Business';
 import ReviewMonitorLog from '@/models/ReviewMonitorLog';
 import Business from '@/models/Business';
 import { generateAIReply, analyzeSentiment } from './ai';
@@ -64,19 +65,26 @@ export async function processNewReviews(businessId: string) {
             replyStatus: 'PENDING',
             replyTone: 'Professional',
             sourcePlatform: data.sourcePlatform,
-          });
+          };
+
+          const savedReview = await Review.create(reviewData);
           aiRepliesGenerated++;
           
-          if (sentiment === 'critical' && process.env.TWILIO_ACCOUNT_SID) {
+          if (sentiment === 'critical' && business?.integrations?.twilioSid && business?.integrations?.twilioAuthToken) {
             try {
-              const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+              const client = require('twilio')(business.integrations.twilioSid, business.integrations.twilioAuthToken);
+              
+              // Find the owner phone (simplified for MVP: send to business phone if no user phone)
+              const alertPhone = business.phone || '+1234567890';
+              
               await client.messages.create({
-                body: `CRITICAL REVIEW ALERT: You just received a 1-star review from ${data.reviewerName}. Log in to reply.`,
-                from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-                to: `whatsapp:${business.phone || '+1234567890'}`
+                body: `🚨 Critical Alert: You received a 1-star review from ${data.reviewerName}. Log in to GMBBoost to respond immediately.`,
+                from: business.integrations.whatsappNumber ? `whatsapp:${business.integrations.whatsappNumber}` : 'whatsapp:+14155238886',
+                to: `whatsapp:${alertPhone}`
               });
+              console.log('Dispatched critical review alert to owner via WhatsApp');
             } catch (err: any) {
-              console.error('Failed to send SMS alert:', err.message);
+              console.error('Failed to send critical alert via Twilio:', err.message);
             }
           }
         } catch (err: any) {

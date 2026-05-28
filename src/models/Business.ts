@@ -20,6 +20,23 @@ export interface IBusiness extends Document {
   competitors: mongoose.Types.ObjectId[];
   organizationId: mongoose.Types.ObjectId;
   userId?: mongoose.Types.ObjectId;
+  integrations: {
+    twilioSid?: string;
+    twilioAuthToken?: string;
+    whatsappNumber?: string;
+  };
+  aiSettings: {
+    tone: string;
+    salesPrompt?: string;
+    replyStyle?: string;
+    leadQualificationBehavior?: string;
+  };
+  reviewAutomationSettings: {
+    enabled: boolean;
+    reminderDays: number;
+    messageTemplate?: string;
+  };
+  onboardingCompleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,7 +61,24 @@ const BusinessSchema: Schema = new Schema(
     keywords: [{ type: String }],
     competitors: [{ type: Schema.Types.ObjectId, ref: 'Business' }],
     organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
-    userId: { type: Schema.Types.ObjectId, ref: 'User' }
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
+    integrations: {
+      twilioSid: { type: String },
+      twilioAuthToken: { type: String },
+      whatsappNumber: { type: String }
+    },
+    aiSettings: {
+      tone: { type: String, default: 'professional' },
+      salesPrompt: { type: String },
+      replyStyle: { type: String },
+      leadQualificationBehavior: { type: String }
+    },
+    reviewAutomationSettings: {
+      enabled: { type: Boolean, default: false },
+      reminderDays: { type: Number, default: 3 },
+      messageTemplate: { type: String }
+    },
+    onboardingCompleted: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
