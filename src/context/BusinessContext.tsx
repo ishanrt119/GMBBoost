@@ -7,10 +7,13 @@ import { DEV_CONTEXT } from "@/lib/dev-context";
 interface Business {
   _id: string;
   name: string;
+  category?: string;
+  address?: string;
   organizationId: string;
   googleConnected: boolean;
-  integrations?: {
-    whatsappNumber?: string;
+  whatsappConfig?: {
+    isConnected: boolean;
+    businessPhone?: string;
   };
 }
 
@@ -26,20 +29,47 @@ const BusinessContext = createContext<BusinessContextType | undefined>(undefined
 export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   
-  const [businesses, setBusinesses] = useState<Business[]>([
-    {
-      _id: DEV_CONTEXT.businessId,
-      name: "Acme Development",
-      organizationId: DEV_CONTEXT.organizationId,
-      googleConnected: false,
-    }
-  ]);
-  const [activeBusiness, setActiveBusiness] = useState<Business | null>(businesses[0]);
-  const [loading, setLoading] = useState(false);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [activeBusiness, setActiveBusiness] = useState<Business | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchBusinesses = async () => {
-    // dummy bypass
+    try {
+      const res = await fetch('/api/business/active');
+      const json = await res.json();
+      if (json.success && json.data) {
+        setBusinesses([json.data]);
+        setActiveBusiness(json.data);
+      } else {
+        // Fallback to dummy data if no cookie exists (user hasn't onboarded yet)
+        const fallback = {
+          _id: DEV_CONTEXT.businessId,
+          name: "Acme Development (Fallback)",
+          organizationId: DEV_CONTEXT.organizationId,
+          googleConnected: false,
+        };
+        setBusinesses([fallback]);
+        setActiveBusiness(fallback);
+      }
+    } catch (err) {
+      console.error("Failed to load business context", err);
+      // Fallback on network error
+      const fallback = {
+        _id: DEV_CONTEXT.businessId,
+        name: "Acme Development (Fallback)",
+        organizationId: DEV_CONTEXT.organizationId,
+        googleConnected: false,
+      };
+      setBusinesses([fallback]);
+      setActiveBusiness(fallback);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchBusinesses();
+  }, []);
 
   const switchBusiness = async (businessId: string) => {
     const selected = businesses.find(b => b._id === businessId);

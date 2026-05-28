@@ -21,9 +21,16 @@ export interface IBusiness extends Document {
   organizationId: mongoose.Types.ObjectId;
   userId?: mongoose.Types.ObjectId;
   integrations: {
-    twilioSid?: string;
-    twilioAuthToken?: string;
     whatsappNumber?: string;
+  };
+  metaBusinessProfileUrl?: string;
+  facebookPageUrl?: string;
+  instagramUrl?: string;
+  whatsappConfig: {
+    provider: string;
+    businessPhone?: string;
+    metaProfileUrl?: string;
+    isConnected: boolean;
   };
   aiSettings: {
     tone: string;
@@ -63,9 +70,16 @@ const BusinessSchema: Schema = new Schema(
     organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
     integrations: {
-      twilioSid: { type: String },
-      twilioAuthToken: { type: String },
       whatsappNumber: { type: String }
+    },
+    metaBusinessProfileUrl: { type: String },
+    facebookPageUrl: { type: String },
+    instagramUrl: { type: String },
+    whatsappConfig: {
+      provider: { type: String, default: 'meta' },
+      businessPhone: { type: String },
+      metaProfileUrl: { type: String },
+      isConnected: { type: Boolean, default: false }
     },
     aiSettings: {
       tone: { type: String, default: 'professional' },

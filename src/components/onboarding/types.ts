@@ -22,9 +22,10 @@ export interface OnboardingData {
   rating: number;
   totalReviews: number;
   // Step 6
-  twilioSid: string;
-  twilioAuthToken: string;
-  whatsappNumber: string;
+  whatsappBusinessNumber: string;
+  metaBusinessProfileUrl: string;
+  facebookPageUrl: string;
+  instagramUrl: string;
   // Step 7
   aiTone: string;
   aiSalesPrompt: string;
@@ -50,9 +51,10 @@ export const initialOnboardingData: OnboardingData = {
   googleMapsUrl: '',
   rating: 0,
   totalReviews: 0,
-  twilioSid: '',
-  twilioAuthToken: '',
-  whatsappNumber: '',
+  whatsappBusinessNumber: '',
+  metaBusinessProfileUrl: '',
+  facebookPageUrl: '',
+  instagramUrl: '',
   aiTone: 'professional',
   aiSalesPrompt: '',
   selectedPlan: 'growth'
