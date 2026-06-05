@@ -72,6 +72,10 @@ export default function LeadDrawer({ lead, isOpen, onClose, onUpdate }: LeadDraw
                   <span className="text-slate-500">Status</span>
                   <span className="font-medium text-slate-900 capitalize">{lead.status}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Assigned To</span>
+                  <span className="font-medium text-slate-900">{lead.assignedUserId ? 'Assigned' : 'Unassigned'}</span>
+                </div>
               </div>
             </div>
 

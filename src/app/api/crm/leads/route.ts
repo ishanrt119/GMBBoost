@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
-import { DEV_CONTEXT } from '@/lib/dev-context';
+import { requireClient } from '@/lib/auth';
+import { cookies } from 'next/headers';
 import mongoose from 'mongoose';
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireClient();
+    if (!auth.ok) return auth.response;
+
     await dbConnect();
-    const businessId = DEV_CONTEXT.businessId;
+    const cookieStore = await cookies();
+    const businessId = cookieStore.get('activeBusinessId')?.value;
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'No active business selected' }, { status: 400 });
+    }
+
     const leads = await Lead.find({ businessId: new mongoose.Types.ObjectId(businessId) })
       .sort({ createdAt: -1 })
       .lean();
@@ -19,10 +29,19 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireClient();
+    if (!auth.ok) return auth.response;
+
     const data = await req.json();
     await dbConnect();
 
-    const businessId = DEV_CONTEXT.businessId;
+    const cookieStore = await cookies();
+    const businessId = cookieStore.get('activeBusinessId')?.value;
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'No active business selected' }, { status: 400 });
+    }
+
     const tenantId = data.tenantId || 'demo-tenant';
 
     const lead = await Lead.create({

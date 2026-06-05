@@ -2,16 +2,27 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Activity from '@/models/Activity';
+import { requireClient } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const auth = await requireClient();
+    if (!auth.ok) return auth.response;
+
     const data = await req.json();
-    
     await dbConnect();
 
-    const lead = await Lead.findById(id);
-    if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    const cookieStore = await cookies();
+    const businessId = cookieStore.get('activeBusinessId')?.value;
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'No active business selected' }, { status: 400 });
+    }
+
+    const lead = await Lead.findOne({ _id: id, businessId });
+    if (!lead) return NextResponse.json({ error: 'Lead not found or unauthorized' }, { status: 404 });
 
     const oldStage = lead.pipelineStage;
     

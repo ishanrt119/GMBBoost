@@ -38,7 +38,7 @@ export default function KanbanBoard({ leads, setLeads, onLeadClick, columns, set
   const handleAddColumn = () => {
     const trimmed = newColumnName.trim();
     if (!trimmed) return;
-    if (columns.includes(trimmed)) {
+    if (columns.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
       alert('A column with this name already exists.');
       return;
     }

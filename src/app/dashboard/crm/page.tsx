@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import CRMStatsRow from '@/components/crm/CRMStatsRow';
 import KanbanBoard from '@/components/crm/KanbanBoard';
 import LeadListView from '@/components/crm/LeadListView';
+import CRMFilterBar from '@/components/crm/CRMFilterBar';
+import CRMAnalytics from '@/components/crm/CRMAnalytics';
 import LeadDrawer from '@/components/crm/LeadDrawer';
 import { LayoutList, Columns } from 'lucide-react';
 
-type ViewMode = 'list' | 'kanban';
+type ViewMode = 'list' | 'kanban' | 'analytics';
 
 export default function CRMDashboard() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -17,11 +19,27 @@ export default function CRMDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [kanbanColumns, setKanbanColumns] = useState<string[]>([]);
 
-  const businessId = '60b9b3b3b3b3b3b3b3b3b3b3';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const filteredLeads = React.useMemo(() => {
+    return leads.filter(lead => {
+      const matchesSearch = !searchQuery || 
+        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.phone?.includes(searchQuery);
+      
+      const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
+      const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+      
+      return matchesSearch && matchesSource && matchesStatus;
+    });
+  }, [leads, searchQuery, sourceFilter, statusFilter]);
 
   const fetchLeads = async () => {
     try {
-      const res = await fetch(`/api/crm/leads?businessId=${businessId}`);
+      const res = await fetch(`/api/crm/leads`);
       const data = await res.json();
       if (data.success) {
         setLeads(data.leads);
@@ -85,7 +103,6 @@ export default function CRMDashboard() {
   const handleCreateDummyLead = async () => {
     try {
       const newLead = {
-        businessId,
         name: 'John Smith',
         phone: '+14155552671',
         source: 'WhatsApp',
@@ -141,6 +158,17 @@ export default function CRMDashboard() {
                 <Columns className="w-4 h-4" />
                 Kanban
               </button>
+              <button
+                onClick={() => setViewMode('analytics' as ViewMode)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  viewMode === ('analytics' as ViewMode)
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                Analytics
+              </button>
             </div>
 
             {/* Add Lead */}
@@ -159,12 +187,23 @@ export default function CRMDashboard() {
         {/* Stats */}
         <CRMStatsRow stats={stats} />
 
+        {/* Filters (Hidden in Analytics View) */}
+        {viewMode !== 'analytics' && (
+          <CRMFilterBar 
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+            statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+          />
+        )}
+
         {/* View */}
-        {viewMode === 'list' ? (
-          <LeadListView leads={leads} onLeadClick={setSelectedLead} />
+        {viewMode === 'analytics' ? (
+          <CRMAnalytics leads={leads} />
+        ) : viewMode === 'list' ? (
+          <LeadListView leads={filteredLeads} onLeadClick={setSelectedLead} />
         ) : (
           <KanbanBoard
-            leads={leads}
+            leads={filteredLeads}
             setLeads={setLeads}
             onLeadClick={setSelectedLead}
             columns={kanbanColumns}

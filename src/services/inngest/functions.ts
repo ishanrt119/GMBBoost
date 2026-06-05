@@ -80,6 +80,14 @@ export const processWhatsappMessage = inngest.createFunction(
         messageStatus: 'received',
         twilioSid: messageSid
       });
+
+      await Activity.create({
+        tenantId,
+        leadId,
+        type: 'WhatsApp',
+        content: `Received: ${numMedia > 0 ? '[Media Attachment]' : body}`,
+        metadata: { direction: 'inbound' }
+      });
     });
 
     if (numMedia > 0 && !body) return { success: true, reason: 'Media-only message ignored by AI' };
