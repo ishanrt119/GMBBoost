@@ -1,9 +1,24 @@
 import mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 
-// Load environment variables
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+// Load environment variables manually
+const envPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envPath)) {
+  const envConfig = fs.readFileSync(envPath, 'utf-8');
+  envConfig.split('\n').forEach(line => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      let val = match[2].trim();
+      if (val.startsWith('"') && val.endsWith('"')) {
+        val = val.slice(1, -1);
+      } else if (val.startsWith("'") && val.endsWith("'")) {
+        val = val.slice(1, -1);
+      }
+      process.env[match[1]] = val;
+    }
+  });
+}
 
 // Setup models locally to avoid next.js imports issues
 const PlanSchema = new mongoose.Schema({
@@ -87,7 +102,7 @@ async function runMigration() {
       }
     ];
 
-    const createdPlans = {};
+    const createdPlans: Record<string, any> = {};
     for (const planData of plansToCreate) {
       let plan = await Plan.findOne({ name: planData.name });
       if (!plan) {
