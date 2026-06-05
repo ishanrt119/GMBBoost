@@ -3,9 +3,9 @@ import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Activity from '@/models/Activity';
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await req.json();
     
     await dbConnect();
@@ -15,22 +15,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const oldStage = lead.pipelineStage;
     
-    // Update fields
-    if (data.pipelineStage) lead.pipelineStage = data.pipelineStage;
-    if (data.notes) lead.notes = data.notes;
-    if (data.status) lead.status = data.status;
-    if (data.tags) lead.tags = data.tags;
+    if (Object.prototype.hasOwnProperty.call(data, 'pipelineStage')) lead.pipelineStage = data.pipelineStage;
+    if (Object.prototype.hasOwnProperty.call(data, 'notes')) lead.notes = data.notes;
+    if (Object.prototype.hasOwnProperty.call(data, 'status')) lead.status = data.status;
+    if (Object.prototype.hasOwnProperty.call(data, 'tags')) lead.tags = data.tags;
 
     lead.lastActivityAt = new Date();
     await lead.save();
 
-    // Log status change if stage changed
-    if (data.pipelineStage && data.pipelineStage !== oldStage) {
+    if (Object.prototype.hasOwnProperty.call(data, 'pipelineStage') && data.pipelineStage !== oldStage) {
       await Activity.create({
         tenantId: lead.tenantId,
         leadId: lead._id,
         type: 'status_change',
-        content: `Moved from ${oldStage} to ${data.pipelineStage}`
+        content: `Moved from ${oldStage || 'Unassigned'} to ${data.pipelineStage || 'Unassigned'}`
       });
     }
 

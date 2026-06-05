@@ -43,6 +43,7 @@ export interface IBusiness extends Document {
     reminderDays: number;
     messageTemplate?: string;
   };
+  kanbanColumns: string[];
   onboardingCompleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -92,6 +93,7 @@ const BusinessSchema: Schema = new Schema(
       reminderDays: { type: Number, default: 3 },
       messageTemplate: { type: String }
     },
+    kanbanColumns: [{ type: String }],
     onboardingCompleted: { type: Boolean, default: false }
   },
   { timestamps: true }
