@@ -21,6 +21,12 @@ export interface ISubscription extends Document {
       activatedAt: Date;
     }
   };
+  // New fields for Phase 1 Migration
+  businessId?: mongoose.Types.ObjectId;
+  planId?: mongoose.Types.ObjectId;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,7 +46,13 @@ const SubscriptionSchema: Schema = new Schema(
       sales_agent: { enabled: { type: Boolean, default: false }, activatedAt: { type: Date } },
       content_studio: { enabled: { type: Boolean, default: false }, activatedAt: { type: Date } },
       marketing_automation: { enabled: { type: Boolean, default: false }, activatedAt: { type: Date } }
-    }
+    },
+    // New fields for Phase 1 Migration
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business' },
+    planId: { type: Schema.Types.ObjectId, ref: 'Plan' },
+    status: { type: String, default: 'active' },
+    startDate: { type: Date },
+    endDate: { type: Date }
   },
   { timestamps: true }
 );

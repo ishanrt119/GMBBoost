@@ -5,6 +5,7 @@ import Audit from '@/models/Audit';
 import Business from '@/models/Business';
 import { requireClient } from '@/lib/auth';
 import { inngest } from '@/services/inngest/client';
+import { checkUsageLimit, incrementUsage } from '@/lib/featureGating';
 
 const auditRequestSchema = z.object({
   businessId: z.string().min(1, 'Business ID is required'),
@@ -49,6 +50,14 @@ export async function POST(req: Request) {
     if (!business.googlePlaceId) {
       return NextResponse.json({ error: 'Google Place ID is missing. Please connect your Google Business Profile.' }, { status: 400 });
     }
+
+    // Check feature gating limits
+    const usageCheck = await checkUsageLimit(business._id, 'audits');
+    if (!usageCheck.allowed) {
+      return NextResponse.json({ error: usageCheck.reason, code: 'UPGRADE_REQUIRED' }, { status: 403 });
+    }
+
+    await incrementUsage(business._id, 'audits');
 
     // Create a pending audit
     const locationStr = [business.city, business.state].filter(Boolean).join(', ');
