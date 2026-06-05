@@ -20,6 +20,11 @@ export interface ILead extends Document {
   
   aiLeadScore?: number;
   aiInsights?: string;
+  qualificationStatus?: string;
+  businessType?: string;
+  budget?: string;
+  urgency?: string;
+  interest?: string;
   
   lastActivityAt: Date;
   createdAt: Date;
@@ -47,19 +52,21 @@ const LeadSchema: Schema = new Schema(
       default: 'Client Prospect'
     },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
-    pipelineStage: { 
-  type: String,
-  default: null
-    },
+    pipelineStage: { type: String, default: null },
     tags: [{ type: String }],
     notes: { type: String },
     
     followUpDates: [{ type: Date }],
     
-    aiLeadScore: { type: Number, min: 0, max: 100 },
+    aiLeadScore: { type: Number },
     aiInsights: { type: String },
+    qualificationStatus: { type: String },
+    businessType: { type: String },
+    budget: { type: String },
+    urgency: { type: String },
+    interest: { type: String },
     
-    lastActivityAt: { type: Date, default: Date.now }
+    lastActivityAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

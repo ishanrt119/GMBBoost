@@ -59,7 +59,7 @@ export async function requireClient(): Promise<
 > {
   try {
     if (IS_DEV) {
-      return { ok: true, userId: DEV_CONTEXT.userId, user: { role: 'CLIENT' } };
+      return { ok: true, userId: DEV_CONTEXT.userId, user: { role: 'CLIENT', organizationId: DEV_CONTEXT.organizationId } };
     }
 
     await dbConnect();

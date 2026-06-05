@@ -43,8 +43,10 @@ export async function processAuditJob(auditId: string) {
     // 11th Floor, Room 1104, Ambuja Neotia, Sector V, Bidhan Nagar, Kolkata"
     const cityLocation = extractCity(businessData.location) || audit.location;
 
+    const targetCategory = audit.metadata?.userDefinedCategory || businessData.primaryCategory;
+
     let realCompetitors = await fetchNearbyCompetitors(
-      businessData.primaryCategory,
+      targetCategory,
       businessData.latitude,
       businessData.longitude,
       businessData.businessName,
@@ -56,7 +58,7 @@ export async function processAuditJob(auditId: string) {
     // Fallback: broaden to full location string if nothing returned
     if (realCompetitors.length === 0) {
       realCompetitors = await fetchNearbyCompetitors(
-        businessData.primaryCategory,
+        targetCategory,
         businessData.latitude,
         businessData.longitude,
         businessData.businessName,
@@ -70,7 +72,7 @@ export async function processAuditJob(auditId: string) {
     const serpKeywords = await generateTargetKeywords(
       businessData.businessName,
       cityLocation,
-      businessData.primaryCategory,
+      targetCategory,
       businessData.description
     );
 
@@ -84,7 +86,8 @@ export async function processAuditJob(auditId: string) {
     const aiResult = await generateAIAudit(
       businessData,
       realCompetitors,
-      realKeywordRankings
+      realKeywordRankings,
+      targetCategory
     );
 
     // ── Step 5: Derive all real metrics ──────────────────────────────────────
@@ -100,7 +103,7 @@ export async function processAuditJob(auditId: string) {
         latitude:        businessData.latitude,
         longitude:       businessData.longitude,
         categories:      businessData.categories,
-        primaryCategory: businessData.primaryCategory,
+        primaryCategory: targetCategory,
         businessHours:   businessData.businessHours,
         servicesCount:   0,
         hasPhotos:       businessData.photosCount > 0,
@@ -120,7 +123,16 @@ export async function processAuditJob(auditId: string) {
     // ── Step 6: Save everything ──────────────────────────────────────────────
     const { overallScore, competitors, recommendations, keywords, servicesCount, categoriesCount, ...auditDataRest } = aiResult;
 
-    audit.overallScore   = overallScore;
+    // Override LLM hallucinated scores with deterministic ones
+    auditDataRest.completenessScore = realMetrics.calculatedProfileScore;
+    auditDataRest.engagementScore = realMetrics.calculatedEngagementScore;
+    
+    // Mathematically derive overall score to prevent 10/100 collapse
+    const calculatedOverallScore = Math.round(
+      (auditDataRest.completenessScore + auditDataRest.engagementScore + auditDataRest.sentimentScore + auditDataRest.keywordScore) / 4
+    );
+
+    audit.overallScore   = calculatedOverallScore;
     audit.competitors    = competitors;
     audit.recommendations = recommendations;
     audit.realMetrics    = realMetrics;

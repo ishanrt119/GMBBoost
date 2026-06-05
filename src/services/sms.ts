@@ -2,6 +2,10 @@ import twilio from 'twilio';
 import dbConnect from '@/lib/mongodb';
 import Business from '@/models/Business';
 
+const client = (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
+
 export const sendSMS = async (businessId: string, to: string, customerName: string, service: string, reviewLink: string, businessName: string) => {
   await dbConnect();
   const business = await Business.findById(businessId);

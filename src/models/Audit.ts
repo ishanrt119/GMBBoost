@@ -55,6 +55,8 @@ export interface IRealMetrics {
   hasAppointmentLinks: boolean;
   hasAdditionalCategories: boolean;
   keywordRankings: IKeywordRanking[];
+  calculatedProfileScore: number;
+  calculatedEngagementScore: number;
 }
 
 export interface IAudit extends Document {
@@ -129,6 +131,8 @@ const RealMetricsSchema = new Schema<IRealMetrics>({
   hasAppointmentLinks: { type: Boolean, default: false },
   hasAdditionalCategories: { type: Boolean, default: false },
   keywordRankings: { type: [KeywordRankingSchema], default: [] },
+  calculatedProfileScore: { type: Number, default: 0 },
+  calculatedEngagementScore: { type: Number, default: 0 },
 });
 
 const AuditSchema = new Schema<IAudit>(

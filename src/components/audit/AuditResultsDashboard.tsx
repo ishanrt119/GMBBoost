@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { IAudit, IRealMetrics } from '@/models/Audit';
+import { Share2, FileText, Download, Sparkles, Building2, Globe, Phone, MapPin, Zap, RefreshCcw, CheckCircle2, TrendingUp, Search, MessageSquare, AlertCircle, Calendar } from 'lucide-react';
+import AuditPrintView from './AuditPrintView';
+import AuditDebugPanel from './AuditDebugPanel';
 
 /* ─── Screen helpers ──────────────────────────────────────── */
 
@@ -569,7 +572,7 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
                   ))}
                 </tbody>
               </table>
-            ) : <p style={{ color:'#94a3b8', fontSize:13 }}>No nearby competitors found — add GOOGLE_MAPS_API_KEY to .env.</p>}
+            ) : <p style={{ color:'#94a3b8', fontSize:13 }}>No nearby competitors found for this business. Try updating your business category to be more specific.</p>}
           </div>
         </div>
 
@@ -593,7 +596,11 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
             </div>
           </div>
         )}
+        {/* --- End Sections --- */}
       </div>
+
+      {/* Developer Debug Panel */}
+      <AuditDebugPanel auditData={audit} />
     </>
   );
 }

@@ -598,6 +598,26 @@ export function deriveRealMetrics(
     ? Math.round((withReply / biz.reviews.length) * 100)
     : 0;
 
+  const hasHours = biz.businessHours.some(h => h.hours !== 'Closed' && h.hours !== '');
+  
+  // Deterministic Profile Score (0-100)
+  let calculatedProfileScore = 20; // Title (10) + Address (10) always present
+  if (aiCategoriesCount >= 1) calculatedProfileScore += 10;
+  if (biz.categories.length > 1) calculatedProfileScore += 10;
+  if (aiServicesCount > 0) calculatedProfileScore += 10;
+  if (biz.phone) calculatedProfileScore += 10;
+  if (biz.website) calculatedProfileScore += 10;
+  if (biz.hasPhotos) calculatedProfileScore += 10;
+  if (hasHours) calculatedProfileScore += 10;
+  if (biz.hasDescription) calculatedProfileScore += 10;
+
+  // Deterministic Engagement Score (0-100)
+  const reviewScore = Math.min((biz.reviewsCount / 100) * 40, 40); // Max 40 at 100+ reviews
+  const respScore = (responseRate / 100) * 30; // Max 30 at 100% response rate
+  const photoScore = Math.min((biz.photosCount / 10) * 15, 15); // Max 15 at 10+ photos
+  const velocityScore = Math.min((reviewsPerWeek / 2) * 15, 15); // Max 15 at 2+ reviews/week
+  const calculatedEngagementScore = Math.round(reviewScore + respScore + photoScore + velocityScore);
+
   return {
     businessRating:          biz.rating,
     reviewsCount:            biz.reviewsCount,
@@ -608,12 +628,14 @@ export function deriveRealMetrics(
     hasWebsite:              !!biz.website,
     hasPhone:                !!biz.phone,
     hasDescription:          biz.hasDescription,
-    hasHours:                biz.businessHours.some(h => h.hours !== 'Closed' && h.hours !== ''),
+    hasHours,
     hasPhotos:               biz.hasPhotos,
     hasLogo:                 biz.hasPhotos,         // proxy — logo not directly available in Places API
     hasServiceArea:          false,                 // not available from Places API
     hasAppointmentLinks:     false,                 // not available from Places API
     hasAdditionalCategories: biz.categories.length > 1,
     keywordRankings,
+    calculatedProfileScore,
+    calculatedEngagementScore
   };
 }

@@ -813,17 +813,4 @@ export const processDemoBooking = inngest.createFunction(
   }
 );
 
-// 12. Generate Audit Job
-export const generateAuditJob = inngest.createFunction(
-  { id: 'generate-audit', retries: 1, triggers: [{ event: 'audit/generate.requested' }] },
-  async ({ event, step }) => {
-    const { auditId } = event.data;
 
-    await step.run('process-audit', async () => {
-      const { processAuditJob } = await import('@/services/audit/auditService');
-      await processAuditJob(auditId);
-    });
-
-    return { success: true, auditId };
-  }
-);

@@ -31,14 +31,30 @@ export async function POST(req: Request) {
       subscriptionPlan: body.selectedPlan === 'starter' ? 'Free' : 'Pro'
     });
 
+    // Naive city/state extraction from comma-separated address
+    const addressParts = (body.address || '').split(',').map((p: string) => p.trim());
+    let city = 'Unknown';
+    let state = 'Unknown';
+    if (addressParts.length >= 3) {
+      city = addressParts[addressParts.length - 3];
+      state = addressParts[addressParts.length - 2].split(' ')[0]; // Drop zip if attached
+    } else if (addressParts.length === 2) {
+      city = addressParts[0];
+      state = addressParts[1].split(' ')[0];
+    }
+
     // 3. Create Business
     const newBusiness = await Business.create({
       name: body.businessName,
       category: body.category || 'Local Business',
       address: body.address || 'Unknown',
+      city,
+      state,
       phone: body.phone,
       website: body.website,
       placeId: body.googlePlaceId || undefined, // undefined prevents unique sparse index crash
+      googlePlaceId: body.googlePlaceId || undefined,
+      coordinates: (body.latitude && body.longitude) ? { lat: body.latitude, lng: body.longitude } : undefined,
       googleConnected: !!body.googlePlaceId,
       organizationId: newOrg._id,
       userId: newUser._id,

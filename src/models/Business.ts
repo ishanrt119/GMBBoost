@@ -5,6 +5,11 @@ export interface IBusiness extends Document {
   category: string;
   address: string;
   city?: string;
+  state?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   services?: string;
   offers?: string;
   tone?: string;
@@ -13,8 +18,11 @@ export interface IBusiness extends Document {
   rating: number;
   reviewCount: number;
   placeId?: string;
+  googlePlaceId?: string;
   googleLocationId?: string;
+  userDefinedCategory?: string;
   googleAccountId?: string;
+  googleTypes?: string[];
   googleConnected: boolean;
   keywords: string[];
   competitors: mongoose.Types.ObjectId[];
@@ -55,6 +63,11 @@ const BusinessSchema: Schema = new Schema(
     category: { type: String, required: true },
     address: { type: String, required: true },
     city: { type: String },
+    state: { type: String },
+    coordinates: {
+      lat: { type: Number },
+      lng: { type: Number }
+    },
     services: { type: String },
     offers: { type: String },
     tone: { type: String, default: 'professional' },
@@ -63,8 +76,11 @@ const BusinessSchema: Schema = new Schema(
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     placeId: { type: String, unique: true, sparse: true },
+    googlePlaceId: { type: String },
     googleLocationId: { type: String },
+    userDefinedCategory: { type: String },
     googleAccountId: { type: String },
+    googleTypes: [{ type: String }],
     googleConnected: { type: Boolean, default: false },
     keywords: [{ type: String }],
     competitors: [{ type: Schema.Types.ObjectId, ref: 'Business' }],

@@ -24,7 +24,8 @@ export interface AIAuditResult extends IAuditData {
 export async function generateAIAudit(
   businessData: GMBBusinessData,
   realCompetitors: ICompetitor[],     // from Google Places Nearby Search
-  realKeywordRankings: IKeywordRanking[] // from SERPAPI
+  realKeywordRankings: IKeywordRanking[], // from SERPAPI
+  targetCategory: string              // userDefinedCategory
 ): Promise<AIAuditResult> {
   const hasRealCompetitors = realCompetitors.length > 0;
   const hasRealRankings    = realKeywordRankings.length > 0 && realKeywordRankings[0].source === 'serpapi';
@@ -40,7 +41,7 @@ ${JSON.stringify({
   rating:         businessData.rating,
   reviewsCount:   businessData.reviewsCount,
   categories:     businessData.categories,
-  primaryCategory: businessData.primaryCategory,
+  primaryCategory: targetCategory,
   photosCount:    businessData.photosCount,
   businessHours:  businessData.businessHours,
   hasWebsite:     businessData.hasWebsite,

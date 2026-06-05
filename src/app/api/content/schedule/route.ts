@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const parsed = schedulePostSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid input', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.format() }, { status: 400 });
     }
 
     await dbConnect();
