@@ -1,12 +1,20 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { BusinessProvider } from "@/context/BusinessContext";
+import { requireClient } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const authResult = await requireClient();
+  
+  if (!authResult.ok) {
+    redirect('/login');
+  }
+
   return (
     <BusinessProvider>
       <div className="min-h-screen bg-slate-50 flex overflow-hidden">
