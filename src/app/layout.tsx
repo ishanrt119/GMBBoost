@@ -20,7 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+<<<<<<< HEAD
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
+=======
+    <html lang="en" className="scroll-smooth">
+>>>>>>> integration-samarth
       <body className={`${inter.variable} ${inter.className} antialiased bg-slate-50 text-slate-900`}>
         {children}
         <Toaster />

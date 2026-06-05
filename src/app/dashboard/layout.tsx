@@ -1,20 +1,28 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { BusinessProvider } from "@/context/BusinessContext";
+<<<<<<< HEAD
 import { requireClient } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
+=======
+
+export default function DashboardLayout({
+>>>>>>> integration-samarth
   children,
 }: {
   children: React.ReactNode;
 }) {
+<<<<<<< HEAD
   const authResult = await requireClient();
   
   if (!authResult.ok) {
     redirect('/login');
   }
 
+=======
+>>>>>>> integration-samarth
   return (
     <BusinessProvider>
       <div className="min-h-screen bg-slate-50 flex overflow-hidden">

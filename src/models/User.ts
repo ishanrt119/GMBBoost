@@ -5,7 +5,11 @@ export interface IUser extends Document {
   email: string;
   phone: string;
   passwordHash?: string; // Optional if you support OAuth later
+<<<<<<< HEAD
   role: 'SUPER_ADMIN' | 'CLIENT';
+=======
+  role: 'Admin' | 'BusinessOwner' | 'TeamMember';
+>>>>>>> integration-samarth
   companyName?: string;
   
   // Verification states
@@ -57,8 +61,13 @@ const UserSchema: Schema = new Schema(
     
     role: { 
       type: String, 
+<<<<<<< HEAD
       enum: ['SUPER_ADMIN', 'CLIENT'], 
       default: 'CLIENT' 
+=======
+      enum: ['Admin', 'BusinessOwner', 'TeamMember'], 
+      default: 'BusinessOwner' 
+>>>>>>> integration-samarth
     },
     companyName: { type: String },
     

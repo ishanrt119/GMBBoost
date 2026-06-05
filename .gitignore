@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 **/node_modules/
@@ -49,3 +50,18 @@ Thumbs.db
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+=======
+ node_modules/
+.next/
+.env
+.env.local
+.env.*
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+tsconfig.tsbuildinfo
+.vercel
+coverage/
+>>>>>>> integration-samarth

@@ -80,6 +80,7 @@ export const processWhatsappMessage = inngest.createFunction(
         messageStatus: 'received',
         twilioSid: messageSid
       });
+<<<<<<< HEAD
 
       await Activity.create({
         tenantId,
@@ -88,6 +89,8 @@ export const processWhatsappMessage = inngest.createFunction(
         content: `Received: ${numMedia > 0 ? '[Media Attachment]' : body}`,
         metadata: { direction: 'inbound' }
       });
+=======
+>>>>>>> integration-samarth
     });
 
     if (numMedia > 0 && !body) return { success: true, reason: 'Media-only message ignored by AI' };

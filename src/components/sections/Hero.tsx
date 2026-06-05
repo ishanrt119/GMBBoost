@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 "use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Play, Sparkles } from "lucide-react";
+=======
+ "use client";
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight, Play, Sparkles, Calendar } from "lucide-react";
+>>>>>>> integration-samarth
 
 export function Hero() {
   return (
@@ -50,10 +58,32 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
         >
+<<<<<<< HEAD
           <Link href="/onboarding" className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20">
             Start Free Audit
             <ArrowRight className="w-5 h-5" />
           </Link>
+=======
+          {/* Start Free Audit Button */}
+          <Link
+            href="/onboarding"
+            className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
+          >
+            Start Free Audit
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+
+          {/* Book Free Demo Button ← NEW */}
+          <Link
+            href="/demo"
+            className="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+          >
+            <Calendar className="w-5 h-5" />
+            Book Free Demo
+          </Link>
+
+          {/* Watch Demo Button */}
+>>>>>>> integration-samarth
           <button className="w-full sm:w-auto px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
             <Play className="w-5 h-5 text-slate-400" />
             Watch Demo
@@ -74,7 +104,11 @@ export function Hero() {
               <div className="w-3 h-3 rounded-full bg-slate-300" />
               <div className="ml-4 px-3 py-1 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-500 shadow-sm">gmb-boost.ai/dashboard</div>
             </div>
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> integration-samarth
             <div className="grid grid-cols-12 gap-4 h-[400px] md:h-[600px] bg-white rounded-t-2xl border-t border-x border-slate-100 shadow-sm">
               {/* Sidebar Mock */}
               <div className="col-span-2 border-r border-slate-100 p-4 hidden md:block">
@@ -82,14 +116,22 @@ export function Hero() {
                   <div key={i} className="h-8 w-full bg-slate-50 rounded-lg mb-4 border border-slate-100" />
                 ))}
               </div>
+<<<<<<< HEAD
               
+=======
+
+>>>>>>> integration-samarth
               {/* Content Mock */}
               <div className="col-span-12 md:col-span-10 p-6 text-left">
                 <div className="flex items-center justify-between mb-8">
                   <div className="h-8 w-48 bg-slate-100 rounded-xl" />
                   <div className="h-10 w-32 bg-indigo-50 border border-indigo-100 rounded-xl" />
                 </div>
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> integration-samarth
                 <div className="grid grid-cols-3 gap-6 mb-8">
                   <div className="h-32 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                     <div className="h-4 w-20 bg-slate-100 rounded mb-4" />
@@ -104,7 +146,11 @@ export function Hero() {
                     <div className="h-8 w-24 bg-slate-200 rounded" />
                   </div>
                 </div>
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> integration-samarth
                 <div className="h-64 bg-slate-50 rounded-3xl border border-slate-200 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-t from-indigo-50/50 to-transparent" />
                   <div className="p-6">
@@ -152,10 +198,18 @@ export function Hero() {
               </div>
             </motion.div>
           </div>
+<<<<<<< HEAD
           
+=======
+
+>>>>>>> integration-samarth
           <div className="absolute -bottom-px left-0 right-0 h-40 bg-gradient-to-t from-background via-background/80 to-transparent z-20" />
         </motion.div>
       </div>
     </section>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> integration-samarth
