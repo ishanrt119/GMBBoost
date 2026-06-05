@@ -51,9 +51,16 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
         if (json.success) {
           setSuggestions(json.data);
           setShowDropdown(true);
+          setError('');
+        } else {
+          // If Google API fails (e.g. REQUEST_DENIED for billing), show the error
+          setError(`Maps API Error: ${json.error || 'Failed to fetch suggestions'}`);
+          setSuggestions([]);
+          setShowDropdown(false);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        setError('Network error: Could not connect to Google Maps API.');
       } finally {
         setIsSearching(false);
       }
