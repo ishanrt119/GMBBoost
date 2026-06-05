@@ -9,10 +9,18 @@ export interface IRecommendation {
 
 export interface ICompetitor {
   name: string;
-  score: number;
+  score: number;      // avg rank position (lower = better)
   reviews: number;
   rating: number;
   postsPerMonth: number;
+  placeId?: string;
+  address?: string;
+}
+
+export interface IKeywordRanking {
+  keyword: string;
+  rank: number;       // actual SERP local-pack position (1-20+)
+  source: 'serpapi' | 'estimated';
 }
 
 export interface IAuditData {
@@ -29,6 +37,26 @@ export interface IAuditData {
   growthOpportunities: string;
 }
 
+/** Real business metrics fetched from APIs — stored separately from AI-generated auditData */
+export interface IRealMetrics {
+  businessRating: number;       // from Google Places
+  reviewsCount: number;         // total review count
+  servicesCount: number;        // number of services on profile
+  categoriesCount: number;      // number of categories
+  reviewsPerWeek: number;       // calculated from review dates
+  responseRate: number;         // % of reviews with owner reply (0-100)
+  hasWebsite: boolean;
+  hasPhone: boolean;
+  hasDescription: boolean;
+  hasHours: boolean;
+  hasPhotos: boolean;
+  hasLogo: boolean;
+  hasServiceArea: boolean;
+  hasAppointmentLinks: boolean;
+  hasAdditionalCategories: boolean;
+  keywordRankings: IKeywordRanking[];
+}
+
 export interface IAudit extends Document {
   tenantId: string;
   userId: string;
@@ -39,6 +67,7 @@ export interface IAudit extends Document {
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   overallScore?: number;
   auditData?: IAuditData;
+  realMetrics?: IRealMetrics;
   recommendations?: IRecommendation[];
   competitors?: ICompetitor[];
   metadata?: any;
@@ -56,9 +85,17 @@ const RecommendationSchema = new Schema<IRecommendation>({
 const CompetitorSchema = new Schema<ICompetitor>({
   name: { type: String, required: true },
   score: { type: Number, required: true },
-  reviews: { type: Number, required: true },
-  rating: { type: Number, required: true },
-  postsPerMonth: { type: Number, required: true },
+  reviews: { type: Number, default: 0 },
+  rating: { type: Number, default: 0 },
+  postsPerMonth: { type: Number, default: 0 },
+  placeId: { type: String },
+  address: { type: String },
+});
+
+const KeywordRankingSchema = new Schema<IKeywordRanking>({
+  keyword: { type: String, required: true },
+  rank: { type: Number, required: true },
+  source: { type: String, enum: ['serpapi', 'estimated'], required: true },
 });
 
 const AuditDataSchema = new Schema<IAuditData>({
@@ -73,6 +110,25 @@ const AuditDataSchema = new Schema<IAuditData>({
   reviewInsights: { type: String, required: true },
   contentInsights: { type: String, required: true },
   growthOpportunities: { type: String, required: true },
+});
+
+const RealMetricsSchema = new Schema<IRealMetrics>({
+  businessRating: { type: Number, default: 0 },
+  reviewsCount: { type: Number, default: 0 },
+  servicesCount: { type: Number, default: 0 },
+  categoriesCount: { type: Number, default: 0 },
+  reviewsPerWeek: { type: Number, default: 0 },
+  responseRate: { type: Number, default: 0 },
+  hasWebsite: { type: Boolean, default: false },
+  hasPhone: { type: Boolean, default: false },
+  hasDescription: { type: Boolean, default: false },
+  hasHours: { type: Boolean, default: false },
+  hasPhotos: { type: Boolean, default: false },
+  hasLogo: { type: Boolean, default: false },
+  hasServiceArea: { type: Boolean, default: false },
+  hasAppointmentLinks: { type: Boolean, default: false },
+  hasAdditionalCategories: { type: Boolean, default: false },
+  keywordRankings: { type: [KeywordRankingSchema], default: [] },
 });
 
 const AuditSchema = new Schema<IAudit>(
@@ -90,6 +146,7 @@ const AuditSchema = new Schema<IAudit>(
     },
     overallScore: { type: Number },
     auditData: { type: AuditDataSchema },
+    realMetrics: { type: RealMetricsSchema },
     recommendations: { type: [RecommendationSchema] },
     competitors: { type: [CompetitorSchema] },
     metadata: { type: Schema.Types.Mixed },
