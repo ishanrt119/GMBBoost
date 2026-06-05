@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import dbConnect from '@/lib/mongodb';
-import Audit from '@/models/Audit';
-import { processAuditJob } from '@/services/audit/auditService';
+import AuditHistory from '@/models/AuditHistory';
+import Business from '@/models/Business';
+import { runEnterpriseAudit } from '@/services/audit-v4/auditEngine';
 
 const auditRequestSchema = z.object({
-  businessName: z.string().min(2, 'Business name is too short'),
-  location: z.string().min(2, 'Location is too short'),
-  gbpUrl: z.string().url().optional().or(z.literal('')),
+  businessId: z.string().min(1, 'Business ID is required'),
 });
 
 export async function POST(req: Request) {
@@ -16,31 +15,22 @@ export async function POST(req: Request) {
     const parsed = auditRequestSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid input', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { businessName, location, gbpUrl } = parsed.data;
+    const { businessId } = parsed.data;
 
     await dbConnect();
 
-    // Mock tenant data (in a real app, extract from auth token/session)
-    const tenantId = 'demo-tenant';
-    const userId = 'demo-user';
-    const organizationId = 'demo-org';
+    const business = await Business.findById(businessId);
+    if (!business) {
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+    }
 
-    // Create a pending audit
-    const audit = await Audit.create({
-      tenantId,
-      userId,
-      organizationId,
-      businessName,
-      location,
-      gbpUrl: gbpUrl || undefined,
-      status: 'PENDING',
-    });
+    const tenantId = business.tenantId || 'demo-tenant';
 
-    // Process the audit synchronously instead of using Inngest
-    await processAuditJob(audit._id.toString());
+    // Process the enterprise audit synchronously
+    const audit = await runEnterpriseAudit(businessId, tenantId);
 
     return NextResponse.json({ success: true, auditId: audit._id }, { status: 201 });
   } catch (error: any) {
@@ -57,7 +47,7 @@ export async function GET(request: Request) {
     const tenantId = searchParams.get("tenantId") || "demo-tenant";
     
     // Return audits for a given tenant
-    const audits = await Audit.find({ tenantId }).sort({ createdAt: -1 });
+    const audits = await AuditHistory.find({ tenantId }).sort({ createdAt: -1 });
 
     return NextResponse.json(audits);
   } catch (error: any) {

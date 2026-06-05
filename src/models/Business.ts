@@ -3,8 +3,13 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IBusiness extends Document {
   name: string;
   category: string;
+  userDefinedCategory?: string;
+  categories: string[];
   address: string;
   city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
   services?: string;
   offers?: string;
   tone?: string;
@@ -12,7 +17,20 @@ export interface IBusiness extends Document {
   website?: string;
   rating: number;
   reviewCount: number;
-  placeId?: string;
+  googlePlaceId?: string;
+  googleMapsUrl?: string;
+  googleLocationId?: string;
+  googleAccessToken?: string;
+  googleRefreshToken?: string;
+  googleAccountId?: string;
+  googleTokenExpiry?: number;
+  googleBusinessProfileUrl?: string;
+  reviewLink?: string;
+  formattedAddress?: string;
+  latitude?: number;
+  longitude?: number;
+  googleRating?: number;
+  googleReviewCount?: number;
   googleLocationId?: string;
   googleAccountId?: string;
   googleConnected: boolean;
@@ -51,9 +69,14 @@ export interface IBusiness extends Document {
 const BusinessSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
-    category: { type: String, required: true },
+    category: { type: String, required: true }, // Keeping for backwards compatibility/primary
+    userDefinedCategory: { type: String },
+    categories: [{ type: String }],
     address: { type: String, required: true },
     city: { type: String },
+    state: { type: String },
+    country: { type: String },
+    postalCode: { type: String },
     services: { type: String },
     offers: { type: String },
     tone: { type: String, default: 'professional' },
@@ -61,7 +84,20 @@ const BusinessSchema: Schema = new Schema(
     website: { type: String },
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
-    placeId: { type: String, unique: true, sparse: true },
+    googlePlaceId: { type: String, unique: true, sparse: true },
+    googleMapsUrl: { type: String },
+    googleLocationId: { type: String, index: true },
+    googleAccessToken: { type: String },
+    googleRefreshToken: { type: String },
+    googleAccountId: { type: String },
+    googleTokenExpiry: { type: Number },
+    googleBusinessProfileUrl: { type: String },
+    reviewLink: { type: String },
+    formattedAddress: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    googleRating: { type: Number, default: 0 },
+    googleReviewCount: { type: Number, default: 0 },
     googleLocationId: { type: String },
     googleAccountId: { type: String },
     googleConnected: { type: Boolean, default: false },

@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 interface ReviewFilterBarProps {
   activeFilter: string;
   onFilterChange: (filter: string) => void;
-  counts: Record<string, number>;
+  activeSort: string;
+  onSortChange: (sort: string) => void;
+  counts?: Record<string, number>;
 }
 
-export default function ReviewFilterBar({ activeFilter, onFilterChange, counts }: ReviewFilterBarProps) {
+export default function ReviewFilterBar({ activeFilter, onFilterChange, activeSort, onSortChange, counts = {} }: ReviewFilterBarProps) {
   const filters = [
     { id: 'all', label: 'All Reviews' },
     { id: 'unanswered', label: 'Unanswered' },
@@ -41,6 +43,19 @@ export default function ReviewFilterBar({ activeFilter, onFilterChange, counts }
           </span>
         </button>
       ))}
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-sm text-slate-500 font-medium">Sort by:</span>
+        <select 
+          value={activeSort}
+          onChange={(e) => onSortChange(e.target.value)}
+          className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent cursor-pointer font-medium shadow-sm"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="highest">Highest Rated</option>
+          <option value="lowest">Lowest Rated</option>
+        </select>
+      </div>
     </div>
   );
 }

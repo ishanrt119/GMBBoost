@@ -1,6 +1,12 @@
 export interface GMBBusinessData {
   businessName: string;
   location: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   rating: number;
   reviewsCount: number;
   categories: string[];
@@ -13,7 +19,7 @@ export interface GMBBusinessData {
 }
 
 export interface IGMBProvider {
-  fetchBusinessDetails(businessName: string, location: string, gbpUrl?: string): Promise<GMBBusinessData>;
+  fetchBusinessDetails(businessName: string, location: string, gbpUrl?: string, businessId?: string): Promise<GMBBusinessData>;
 }
 
 export class MockGMBProvider implements IGMBProvider {
@@ -65,7 +71,9 @@ export class MockGMBProvider implements IGMBProvider {
   }
 }
 
+import { GoogleBusinessProfileProvider } from './realProvider';
+
 // Factory or DI logic can be added here later to swap out Mock for Real Provider
 export function getGMBProvider(): IGMBProvider {
-  return new MockGMBProvider();
+  return new GoogleBusinessProfileProvider();
 }

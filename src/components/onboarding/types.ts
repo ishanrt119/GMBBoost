@@ -9,7 +9,8 @@ export interface OnboardingData {
   companyName: string;
   // Step 4
   businessName: string;
-  category: string;
+  category: string; // Keeping for fallback/API raw value
+  userDefinedCategory: string;
   phone: string;
   address: string;
   website: string;
@@ -19,6 +20,7 @@ export interface OnboardingData {
   latitude: number | null;
   longitude: number | null;
   googleMapsUrl: string;
+  googleLocationId?: string;
   rating: number;
   totalReviews: number;
   // Step 6
@@ -41,6 +43,7 @@ export const initialOnboardingData: OnboardingData = {
   companyName: '',
   businessName: '',
   category: '',
+  userDefinedCategory: '',
   phone: '',
   address: '',
   website: '',
@@ -49,6 +52,7 @@ export const initialOnboardingData: OnboardingData = {
   latitude: null,
   longitude: null,
   googleMapsUrl: '',
+  googleLocationId: '',
   rating: 0,
   totalReviews: 0,
   whatsappBusinessNumber: '',

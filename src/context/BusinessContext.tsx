@@ -8,6 +8,7 @@ interface Business {
   _id: string;
   name: string;
   category?: string;
+  userDefinedCategory?: string;
   address?: string;
   organizationId: string;
   googleConnected: boolean;
@@ -22,6 +23,7 @@ interface BusinessContextType {
   activeBusiness: Business | null;
   loading: boolean;
   switchBusiness: (businessId: string) => Promise<void>;
+  refreshBusiness: () => Promise<void>;
 }
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
@@ -79,8 +81,13 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshBusiness = async () => {
+    await fetchBusinesses();
+    router.refresh();
+  };
+
   return (
-    <BusinessContext.Provider value={{ businesses, activeBusiness, loading, switchBusiness }}>
+    <BusinessContext.Provider value={{ businesses, activeBusiness, loading, switchBusiness, refreshBusiness }}>
       {children}
     </BusinessContext.Provider>
   );

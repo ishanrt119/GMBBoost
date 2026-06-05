@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Review from '@/models/Review';
+import Business from '@/models/Business';
 import AutomationLog from '@/models/AutomationLog';
-import { googleProvider } from '@/services/reviews/providers/MockGoogleProvider';
+import { replyToReview } from '@/services/google/gbp';
 
 export async function POST(req: Request) {
   try {
@@ -16,12 +17,17 @@ export async function POST(req: Request) {
     const review = await Review.findById(reviewId);
     if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
 
-    if (!review.providerReviewId) {
-      return NextResponse.json({ error: 'Review lacks provider ID' }, { status: 400 });
+    if (!review.googleReviewId) {
+      return NextResponse.json({ error: 'Review lacks googleReviewId, cannot reply via API.' }, { status: 400 });
     }
 
-    // Call Provider
-    const result = await googleProvider.postReply(review.providerReviewId, replyText);
+    const business = await Business.findById(review.businessId);
+    if (!business || !business.googleConnected || !business.googleAccessToken) {
+      return NextResponse.json({ error: 'Business is not connected to Google Profile.' }, { status: 400 });
+    }
+
+    // Call Real Google Business Profile API
+    const result = await replyToReview(business, review.googleReviewId, replyText);
 
     // Update DB
     review.response = replyText;
@@ -35,7 +41,7 @@ export async function POST(req: Request) {
       workflow: 'review-reply',
       action: 'post_reply',
       status: 'success',
-      message: `Successfully posted reply to review ${review.providerReviewId}`
+      message: `Successfully posted reply to review ${review.googleReviewId}`
     });
 
     return NextResponse.json({ success: true, review });

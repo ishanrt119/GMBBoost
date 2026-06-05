@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Audit from '@/models/Audit';
+import AuditHistory from '@/models/AuditHistory';
 
 export async function GET(
   req: Request,
@@ -10,7 +10,7 @@ export async function GET(
     const { id } = await params;
     await dbConnect();
 
-    const audit = await Audit.findById(id);
+    const audit = await AuditHistory.findById(id);
 
     if (!audit) {
       return NextResponse.json({ error: 'Audit not found' }, { status: 404 });

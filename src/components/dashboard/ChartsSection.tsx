@@ -18,7 +18,7 @@ export default function ChartsSection({ charts }: ChartsSectionProps) {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
         <h3 className="font-bold text-slate-900 mb-6">Leads Growth</h3>
         <div className="h-64 relative">
-          <ResponsiveContainer width="100%" height="100%" className="relative">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} className="relative">
             {charts.leadsOverTime.length === 0 ? (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
                 <p className="text-sm font-medium text-slate-600 mb-2">No historical lead data</p>
@@ -42,7 +42,7 @@ export default function ChartsSection({ charts }: ChartsSectionProps) {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <h3 className="font-bold text-slate-900 mb-6">Lead Sources</h3>
         <div className="h-64 flex flex-col justify-center">
-          <ResponsiveContainer width="100%" height="100%" className="relative">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} className="relative">
             {charts.sourceDonut.length === 0 ? (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
                 <p className="text-sm font-medium text-slate-600 mb-2">No source data</p>

@@ -22,6 +22,14 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+const PREDEFINED_CATEGORIES = [
+  'University', 'College', 'School', 'Coaching Institute', 'Training Institute',
+  'Restaurant', 'Cafe', 'Hotel', 'Gym', 'Fitness Center',
+  'Dental Clinic', 'Dentist', 'Hospital', 'Medical Center',
+  'Real Estate Agency', 'Marketing Agency', 'Software Company', 'IT Services',
+  'Retail Store', 'Salon', 'Spa', 'Other'
+];
+
 export default function StepBusiness({ data, updateData, onNext, onBack }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedQuery = useDebounce(searchQuery, 300);
@@ -77,13 +85,13 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
         // Auto-generate the direct review link
         const generatedReviewLink = `https://search.google.com/local/writereview?placeid=${placeId}`;
 
-        // Auto-fill everything
+        // Auto-fill everything EXCEPT userDefinedCategory
         updateData({
           businessName: d.name || mainText,
           address: d.formattedAddress || '',
           phone: d.phoneNumber || '',
           website: d.website || '',
-          category: d.categories && d.categories.length > 0 ? d.categories[0].replace(/_/g, ' ') : '',
+          category: d.categories && d.categories.length > 0 ? d.categories[0].replace(/_/g, ' ') : '', // Keep raw for reference
           googlePlaceId: placeId,
           googleMapsUrl: d.googleMapsUrl || '',
           latitude: d.latitude || null,
@@ -108,8 +116,8 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
   };
 
   const handleContinue = () => {
-    if (!data.businessName || !data.phone) {
-      setError('Please fill in the required fields (Business Name & Phone).');
+    if (!data.businessName || !data.phone || !data.userDefinedCategory) {
+      setError('Please fill in the required fields (Business Name, Category & Phone).');
       return;
     }
     setError('');
@@ -233,14 +241,23 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2">Category</label>
-                <input
-                  type="text"
-                  value={data.category}
-                  onChange={e => updateData({ category: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none capitalize"
-                  placeholder="e.g. dental clinic"
-                />
+                <label className="block text-sm font-bold text-slate-900 mb-2">Business Category *</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    list="category-options"
+                    value={data.userDefinedCategory}
+                    onChange={e => updateData({ userDefinedCategory: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none capitalize"
+                    placeholder="e.g. University, Dentist..."
+                  />
+                  <datalist id="category-options">
+                    {PREDEFINED_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Select from list or type your own.</p>
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-900 mb-2">Phone Number *</label>

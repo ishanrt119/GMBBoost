@@ -613,7 +613,7 @@ export const generateAuditJob = inngest.createFunction(
 
 // 8. Review Management Automation Workflow (Module 4)
 export const reviewSyncWorker = inngest.createFunction(
-  { id: "review-sync-worker", triggers: [{ cron: "0 2 * * *" }] }, // Nightly at 2 AM
+  { id: "review-sync-worker", triggers: [{ cron: "0 */6 * * *" }] }, // Every 6 hours
   async ({ step }) => {
     const businesses = await step.run("fetch-active-businesses", async () => {
       const dbConnect = (await import("@/lib/mongodb")).default;
@@ -639,12 +639,8 @@ export const processReviewSyncJob = inngest.createFunction(
   async ({ event, step }) => {
     const { businessId } = event.data;
     await step.run("sync-reviews-from-provider", async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reviews/fetch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessId })
-      });
-      if (!res.ok) throw new Error("Sync API failed");
+      const { syncBusinessReviews } = await import('@/services/reviews/syncEngine');
+      await syncBusinessReviews(businessId);
     });
     return { success: true };
   }

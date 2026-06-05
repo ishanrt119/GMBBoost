@@ -6,35 +6,50 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-export interface AIAuditResult extends IAuditData {
-  overallScore: number;
+import { GBPScoreDetails } from '../audit/scoringEngine';
+
+export interface AIAuditResult {
   recommendations: IRecommendation[];
-  competitors: ICompetitor[];
+  quickWins: string[];
+  strengths: string[];
+  weaknesses: string[];
+  seoInsights: string;
+  reviewInsights: string;
+  contentInsights: string;
+  growthOpportunities: string;
+  competitorGapAnalysis: string;
+  keywordGapAnalysis: any[];
+  industryBenchmarking: any;
 }
 
-export async function generateAIAudit(businessData: GMBBusinessData): Promise<AIAuditResult> {
+export async function generateAIAudit(
+  businessData: GMBBusinessData,
+  scoreDetails: GBPScoreDetails,
+  competitors: any[],
+  rankGrid: any,
+  tier: number,
+  revenueOpportunity: any
+): Promise<AIAuditResult> {
   const prompt = `
 You are an expert local SEO and Google Business Profile consultant. Analyze the following business profile data and return STRICT JSON matching the required schema.
 
 BUSINESS DATA:
 ${JSON.stringify(businessData, null, 2)}
 
+CALCULATED SCORES & TIER (Tier ${tier}):
+${JSON.stringify(scoreDetails, null, 2)}
+
+COMPETITORS:
+${JSON.stringify(competitors, null, 2)}
+
+RANK GRID:
+${JSON.stringify(rankGrid, null, 2)}
+
+REVENUE OPPORTUNITY:
+${JSON.stringify(revenueOpportunity, null, 2)}
+
 REQUIRED JSON OUTPUT SCHEMA:
 {
-  "overallScore": 0-100,
-  "completenessScore": 0-100,
-  "keywordScore": 0-100,
-  "sentimentScore": 0-100,
-  "engagementScore": 0-100,
-  "competitors": [
-    {
-      "name": "string",
-      "score": 0-100,
-      "reviews": number,
-      "rating": number,
-      "postsPerMonth": number
-    }
-  ], // Array of EXACTLY 3 competitors (make up realistic local competitors based on the business category and location if needed)
   "recommendations": [
     {
       "title": "string",
@@ -42,14 +57,30 @@ REQUIRED JSON OUTPUT SCHEMA:
       "effort": "High" | "Medium" | "Low",
       "description": "string"
     }
-  ], // EXACTLY 10 actionable recommendations
-  "quickWins": ["string", "string", "string"], // EXACTLY 3 quick wins
+  ], // Array of EXACTLY 9 recommendations. Top 3 are for Month 1 (30-Day Plan), next 3 for Month 2 (60-Day), final 3 for Month 3 (90-Day).
+  "quickWins": ["string", "string", "string"], 
   "strengths": ["string"],
   "weaknesses": ["string"],
   "seoInsights": "string",
-  "reviewInsights": "string",
+  "reviewInsights": "string (Focus on Review Intelligence: positive/negative themes, sentiment, recurring complaints/strengths)",
   "contentInsights": "string",
-  "growthOpportunities": "string"
+  "growthOpportunities": "string",
+  "competitorGapAnalysis": "string (You vs Best Competitor)",
+  "keywordGapAnalysis": [
+    {
+      "keyword": "string",
+      "volume": 0,
+      "difficulty": 0,
+      "opportunityScore": 0,
+      "currentRank": 0,
+      "competitorRank": 0
+    }
+  ], // Exact 3 keywords
+  "industryBenchmarking": {
+    "industryAverage": "string",
+    "top25Percent": "string",
+    "top10Percent": "string"
+  }
 }
 
 Ensure the response is ONLY valid JSON.

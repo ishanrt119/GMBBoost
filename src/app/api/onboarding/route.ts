@@ -9,6 +9,14 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const body = await req.json();
+    const cookieStore = await cookies();
+    const tempTokensStr = cookieStore.get('tempGoogleOAuth')?.value;
+    let oauthTokens = null;
+    if (tempTokensStr) {
+      try {
+        oauthTokens = JSON.parse(tempTokensStr);
+      } catch (e) {}
+    }
     
     // 1. Find or Create User (Handles duplicate test emails)
     let newUser = await User.findOne({ email: body.email });
@@ -35,11 +43,25 @@ export async function POST(req: Request) {
     const newBusiness = await Business.create({
       name: body.businessName,
       category: body.category || 'Local Business',
+      userDefinedCategory: body.userDefinedCategory || 'General',
       address: body.address || 'Unknown',
       phone: body.phone,
       website: body.website,
-      placeId: body.googlePlaceId || undefined, // undefined prevents unique sparse index crash
-      googleConnected: !!body.googlePlaceId,
+      googlePlaceId: body.googlePlaceId || undefined, // undefined prevents unique sparse index crash
+      googleMapsUrl: body.googleMapsUrl,
+      googleBusinessProfileUrl: body.gbpUrl,
+      reviewLink: body.gbpUrl,
+      formattedAddress: body.address,
+      latitude: body.latitude,
+      longitude: body.longitude,
+      googleRating: body.rating,
+      googleReviewCount: body.totalReviews,
+      googleConnected: !!oauthTokens || !!body.googlePlaceId,
+      googleLocationId: body.googleLocationId,
+      googleAccessToken: oauthTokens?.access_token,
+      googleRefreshToken: oauthTokens?.refresh_token,
+      googleAccountId: oauthTokens?.account_id,
+      googleTokenExpiry: oauthTokens?.expiry_date,
       organizationId: newOrg._id,
       userId: newUser._id,
       metaBusinessProfileUrl: body.metaBusinessProfileUrl,
@@ -67,7 +89,6 @@ export async function POST(req: Request) {
     });
 
     // 5. Set Cookie for Dashboard state (Bypassing NextAuth)
-    const cookieStore = await cookies();
     cookieStore.set('activeBusinessId', newBusiness._id.toString(), {
       path: '/',
       httpOnly: true,
@@ -75,6 +96,9 @@ export async function POST(req: Request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30 // 30 days
     });
+
+    // Clear temp OAuth cookie
+    cookieStore.delete('tempGoogleOAuth');
 
     return NextResponse.json({ success: true, businessId: newBusiness._id }, { status: 200 });
 

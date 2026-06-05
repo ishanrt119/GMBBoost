@@ -33,6 +33,7 @@ export interface IAudit extends Document {
   tenantId: string;
   userId: string;
   organizationId: string;
+  businessId?: mongoose.Types.ObjectId | string;
   businessName: string;
   location: string;
   gbpUrl?: string;
@@ -80,6 +81,7 @@ const AuditSchema = new Schema<IAudit>(
     tenantId: { type: String, required: true, index: true },
     userId: { type: String, required: true },
     organizationId: { type: String, required: true },
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', index: true },
     businessName: { type: String, required: true },
     location: { type: String, required: true },
     gbpUrl: { type: String },

@@ -5,6 +5,7 @@ import Lead from '@/models/Lead';
 import Review from '@/models/Review';
 import Post from '@/models/Post';
 import Activity from '@/models/Activity';
+import Business from '@/models/Business';
 import mongoose from 'mongoose';
 
 export async function GET(req: Request) {
@@ -129,7 +130,8 @@ export async function GET(req: Request) {
       .lean();
 
     // Execute all in parallel
-    const [leadsRes, reviewsRes, postsRes, followUps, activities] = await Promise.all([
+    const [business, leadsRes, reviewsRes, postsRes, followUps, activities] = await Promise.all([
+      Business.findById(bid).lean(),
       leadsPromise,
       reviewsPromise,
       postsPromise,
@@ -152,8 +154,8 @@ export async function GET(req: Request) {
       metrics: {
         totalLeads: leads.metrics[0]?.total || 0,
         convertedLeads: leads.metrics[0]?.converted || 0,
-        totalReviews: reviews.metrics[0]?.total || 0,
-        avgRating: reviews.metrics[0]?.avgRating ? Number(reviews.metrics[0].avgRating.toFixed(1)) : 0,
+        totalReviews: business?.googleReviewCount || reviews.metrics[0]?.total || 0,
+        avgRating: business?.googleRating || (reviews.metrics[0]?.avgRating ? Number(reviews.metrics[0].avgRating.toFixed(1)) : 0),
         unansweredReviews: reviews.metrics[0]?.unanswered || 0,
         postsPublished: posts.metrics[0]?.published || 0,
         bufferDays
