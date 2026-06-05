@@ -2,7 +2,6 @@ import dbConnect from '@/lib/mongodb';
 import Review from '@/models/Review';
 import Business from '@/models/Business';
 import ReviewMonitorLog from '@/models/ReviewMonitorLog';
-import Business from '@/models/Business';
 import { generateAIReply, analyzeSentiment } from './ai';
 
 /**
@@ -55,7 +54,7 @@ export async function processNewReviews(businessId: string) {
           const sentiment = await analyzeSentiment(data.reviewText, data.rating);
           const aiReply = await generateAIReply(data.reviewText, data.rating, data.reviewerName, 'Professional');
 
-          await Review.create({
+          const reviewData = {
             businessId: business._id,
             reviewer: data.reviewerName,
             rating: data.rating,

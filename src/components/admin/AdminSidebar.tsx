@@ -18,6 +18,7 @@ import {
   Clock,
   Headset,
   Settings,
+  Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils';
 const adminLinks = [
   { name: 'Dashboard',     icon: LayoutDashboard, href: '/admin' },
   { name: 'Customers',     icon: Users,           href: '/admin/customers' },
+  { name: 'Demo Bookings', icon: Calendar,        href: '/admin/demo-bookings' },
   { name: 'Businesses',    icon: Building2,       href: '/admin/businesses' },
   { name: 'Subscriptions', icon: CreditCard,      href: '/admin/subscriptions' },
   { name: 'Revenue',       icon: DollarSign,      href: '/admin/revenue' },

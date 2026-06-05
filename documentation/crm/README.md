@@ -40,3 +40,15 @@ While businesses can dynamically add and name their own pipeline stages (`kanban
 `['New', 'Contacted', 'Qualified', 'Interested', 'Not Interested', 'Converted']`.
 
 Leads without a stage are mapped to the first column (`New` or `Unassigned`).
+
+## Platform Architecture: Demo Bookings
+
+While the CRM is predominantly used by our clients to manage *their* leads, it also acts as the internal system of record for **GMBBoost Platform Prospects** (Demo Bookings). 
+
+When a user visits `/book-demo` and submits the form:
+1. An internal `Lead` is created with `tenantId: 'gmbboost-internal'` and `leadType: 'Platform Prospect'`.
+2. A `DemoBooking` record is created and linked to the `Lead`.
+3. An Inngest background job (`demo/booked`) dispatches confirmation emails via SendGrid to the prospect and platform admins.
+4. The Super Admin manages these bookings strictly via the `/admin/demo-bookings` dashboard. 
+
+**Security Note:** Standard API endpoints (`/api/crm/leads`) enforce strict multi-tenancy (`activeBusinessId`). Platform prospects bypass this by using a dedicated tenant namespace and are only surfaced in Super Admin routes (`/api/admin/demo-bookings`), ensuring clients never see our internal leads.

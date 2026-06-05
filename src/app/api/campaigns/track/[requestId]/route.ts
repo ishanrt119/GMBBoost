@@ -3,10 +3,14 @@ import dbConnect from '@/lib/mongodb';
 import ReviewRequest from '@/models/ReviewRequest';
 import BusinessConfig from '@/models/BusinessAIConfig'; // assuming we might store review link here, else fallback
 
-export async function GET(req: Request, { params }: { params: { requestId: string } }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ requestId: string }> }
+) {
   try {
     await dbConnect();
-    const { requestId } = params;
+    const resolvedParams = await params;
+    const { requestId } = resolvedParams;
 
     const reviewRequest = await ReviewRequest.findById(requestId);
     if (!reviewRequest) {

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 'use client';
 
 import React, { useState } from 'react';
@@ -9,16 +8,6 @@ import {
   KeyboardSensor,
   PointerSensor,
   useSensor,
-=======
-import React, { useState } from 'react';
-import { 
-  DndContext, 
-  DragOverlay, 
-  closestCorners, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
->>>>>>> integration-samarth
   useSensors,
   DragStartEvent,
   DragOverEvent,
@@ -28,16 +17,10 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import LeadColumn from './LeadColumn';
 import LeadCard from './LeadCard';
 
-<<<<<<< HEAD
-=======
-const STAGES = ['New', 'Contacted', 'Qualified', 'Interested', 'Not Interested', 'Converted'];
-
->>>>>>> integration-samarth
 interface KanbanBoardProps {
   leads: any[];
   setLeads: React.Dispatch<React.SetStateAction<any[]>>;
   onLeadClick: (lead: any) => void;
-<<<<<<< HEAD
   columns: string[];
   setColumns: React.Dispatch<React.SetStateAction<string[]>>;
 }
@@ -46,19 +29,12 @@ export default function KanbanBoard({ leads, setLeads, onLeadClick, columns, set
   const [activeId, setActiveId] = useState<string | null>(null);
   const [newColumnName, setNewColumnName] = useState('');
   const [showInput, setShowInput] = useState(false);
-=======
-}
-
-export default function KanbanBoard({ leads, setLeads, onLeadClick }: KanbanBoardProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
->>>>>>> integration-samarth
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-<<<<<<< HEAD
   const handleAddColumn = () => {
     const trimmed = newColumnName.trim();
     if (!trimmed) return;
@@ -90,13 +66,10 @@ export default function KanbanBoard({ leads, setLeads, onLeadClick }: KanbanBoar
     setColumns(prev => prev.filter(c => c !== colName));
   };
 
-=======
->>>>>>> integration-samarth
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
 
-<<<<<<< HEAD
   // Helper — given any droppable/sortable id, find which column it belongs to
   const getColumnForId = (id: string): string | null => {
     // It's a column id directly
@@ -141,63 +114,10 @@ export default function KanbanBoard({ leads, setLeads, onLeadClick }: KanbanBoar
       });
     } catch (err) {
       console.error('Failed to update lead stage:', err);
-=======
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    const isActiveTask = active.data.current;
-    const isOverColumn = STAGES.includes(overId as string);
-
-    if (!isActiveTask) return;
-
-    // Moving lead over a different column empty area
-    if (isOverColumn) {
-      setLeads((prev) => {
-        const activeIndex = prev.findIndex((t) => t._id === activeId);
-        const newLeads = [...prev];
-        newLeads[activeIndex] = { ...newLeads[activeIndex], pipelineStage: overId };
-        return newLeads;
-      });
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeLead = active.data.current;
-    if (!activeLead) return;
-    
-    // We update the backend with the new stage
-    const newStage = over.id as string;
-    
-    // Check if dropping on a card instead of empty column
-    const overData = over.data.current;
-    const targetStage = STAGES.includes(newStage) ? newStage : overData?.pipelineStage;
-
-    if (targetStage && activeLead.pipelineStage !== targetStage) {
-      try {
-        await fetch(`/api/crm/leads/${activeLead._id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pipelineStage: targetStage })
-        });
-      } catch (err) {
-        console.error('Failed to update lead stage:', err);
-      }
->>>>>>> integration-samarth
     }
   };
 
   const activeLead = activeId ? leads.find(l => l._id === activeId) : null;
-<<<<<<< HEAD
   const unassignedLeads = leads.filter(l => !l.pipelineStage || !columns.includes(l.pipelineStage));
 
   return (
@@ -205,19 +125,10 @@ export default function KanbanBoard({ leads, setLeads, onLeadClick }: KanbanBoar
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
-=======
-
-  return (
-    <div className="h-[calc(100vh-280px)] min-h-[500px]">
-      <DndContext 
-        sensors={sensors} 
-        collisionDetection={closestCorners} 
->>>>>>> integration-samarth
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-<<<<<<< HEAD
         <div className="flex h-full gap-5 overflow-x-auto pb-4 hide-scrollbar items-start pt-1">
 
           <LeadColumn
@@ -285,27 +196,10 @@ export default function KanbanBoard({ leads, setLeads, onLeadClick }: KanbanBoar
 
         </div>
 
-=======
-        <div className="flex h-full gap-6 overflow-x-auto pb-4 hide-scrollbar">
-          {STAGES.map(stage => (
-            <LeadColumn 
-              key={stage} 
-              id={stage} 
-              title={stage} 
-              leads={leads.filter(l => l.pipelineStage === stage)} 
-              onLeadClick={onLeadClick}
-            />
-          ))}
-        </div>
->>>>>>> integration-samarth
         <DragOverlay>
           {activeLead ? <LeadCard lead={activeLead} onClick={() => {}} /> : null}
         </DragOverlay>
       </DndContext>
     </div>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> integration-samarth

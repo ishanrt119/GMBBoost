@@ -15,41 +15,9 @@ import { generateSalesResponse } from "@/services/ai";
 import { generateAIContent } from "@/services/ai/contentEngine";
 import twilio from "twilio";
 import mongoose from "mongoose";
+import { sendOutboundMessage } from "@/services/twilio/client";
 
 const FALLBACK_MESSAGE = "I'm having a little trouble connecting to my brain right now. Please hold on or call our main line!";
-
-// Helper function to send outbound messages with Queue tracking
-async function sendOutboundMessage(phone: string, body: string, leadId?: string, businessId?: string) {
-  await dbConnect();
-  const business = await Business.findById(businessId);
-  if (!business?.integrations?.twilioSid || !business?.integrations?.twilioAuthToken) return;
-  
-  const client = twilio(business.integrations.twilioSid, business.integrations.twilioAuthToken);
-  const fromNumber = business.integrations.whatsappNumber || process.env.TWILIO_WHATSAPP_NUMBER;
-  
-  const msgLog = await MessageQueue.create({
-    leadId,
-    direction: 'OUTBOUND',
-    status: 'PENDING',
-    payload: { phone, body },
-  });
-
-  try {
-    await client.messages.create({
-      body,
-      from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:${phone}`
-    });
-    msgLog.status = 'SENT';
-    msgLog.sentAt = new Date();
-    await msgLog.save();
-  } catch (error: any) {
-    msgLog.status = 'FAILED';
-    msgLog.failedReason = error.message;
-    await msgLog.save();
-    throw error; // Rethrow to trigger Inngest retry
-  }
-}
 
 // 1. WhatsApp AI Worker
 export const processWhatsappMessage = inngest.createFunction(
@@ -80,7 +48,6 @@ export const processWhatsappMessage = inngest.createFunction(
         messageStatus: 'received',
         twilioSid: messageSid
       });
-<<<<<<< HEAD
 
       await Activity.create({
         tenantId,
@@ -89,8 +56,6 @@ export const processWhatsappMessage = inngest.createFunction(
         content: `Received: ${numMedia > 0 ? '[Media Attachment]' : body}`,
         metadata: { direction: 'inbound' }
       });
-=======
->>>>>>> integration-samarth
     });
 
     if (numMedia > 0 && !body) return { success: true, reason: 'Media-only message ignored by AI' };
@@ -761,6 +726,87 @@ export const dispatchWhatsappFollowUpJob = inngest.createFunction(
         type: "WhatsApp",
         content: `Sent automated ${templateType}`
       });
+    });
+
+    return { success: true };
+  }
+);
+
+// 10. Demo Booking Notifications Worker
+export const processDemoBooking = inngest.createFunction(
+  { id: "process-demo-booking", retries: 3, triggers: [{ event: "demo/booked" }] },
+  async ({ event, step }) => {
+    const { bookingId } = event.data;
+
+    await step.run("send-demo-emails", async () => {
+      const dbConnect = (await import("@/lib/mongodb")).default;
+      await dbConnect();
+      
+      const { default: DemoBooking } = await import("@/models/DemoBooking");
+      const booking = await DemoBooking.findById(bookingId).lean();
+      
+      if (!booking) return;
+
+      // Ensure SendGrid logic can be placed here or use a helper
+      const sendEmail = async (to: string, subject: string, html: string) => {
+        try {
+          await fetch('https://api.sendgrid.com/v3/mail/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              personalizations: [{ to: [{ email: to }] }],
+              from: { email: process.env.EMAIL_FROM!, name: 'GMBBoost' },
+              subject,
+              content: [{ type: 'text/html', value: html }],
+            }),
+          });
+        } catch (error) {
+          console.error('Email send error:', error);
+        }
+      };
+
+      // Admin Alert
+      if (process.env.ADMIN_EMAIL) {
+        await sendEmail(
+          process.env.ADMIN_EMAIL,
+          `New Demo Booking - ${booking.name} from ${booking.company}`,
+          `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">New Demo Booking!</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Name</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${booking.name}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Email</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${booking.email}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Phone</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${booking.phone}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Company</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${booking.company}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Date</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${booking.date}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Time</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${booking.timeSlot}</td></tr>
+              </table>
+            </div>
+          `
+        );
+      }
+
+      // Customer Confirmation
+      await sendEmail(
+        booking.email,
+        'Demo Booking Confirmed - GMBBoost',
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Demo Confirmed!</h2>
+            <p>Hi <b>${booking.name}</b>,</p>
+            <p>Your free demo has been successfully booked!</p>
+            <div style="background: #f0f7ff; border-radius: 12px; padding: 20px; margin: 20px 0;">
+              <p style="margin: 0;"><b>Date:</b> ${booking.date}</p>
+              <p style="margin: 8px 0 0;"><b>Time:</b> ${booking.timeSlot}</p>
+            </div>
+            <p>Our team will contact you shortly to confirm the meeting link.</p>
+            <p style="color: #64748b; font-size: 14px;">Team GMBBoost</p>
+          </div>
+        `
+      );
     });
 
     return { success: true };

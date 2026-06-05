@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils";
 import { useBusiness } from "@/context/BusinessContext";
 
 const sidebarLinks = [
-<<<<<<< HEAD
   { name: "Dashboard Home", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Audit Engine", icon: Zap, href: "/dashboard/audit" },
   { name: "Review Management", icon: Star, href: "/dashboard/reviews" },
@@ -36,17 +35,6 @@ const sidebarLinks = [
   { name: "Settings", icon: Settings, href: "/dashboard/settings" },
   { name: "Billing", icon: BarChart3, href: "/dashboard/billing" },
   { name: "Profile", icon: Users, href: "/dashboard/profile" },
-=======
-  { name: "Overview", icon: LayoutDashboard, href: "/dashboard" },
-  { name: "AI Audits", icon: Zap, href: "/dashboard/audit" },
-  { name: "AI Content", icon: Calendar, href: "/dashboard/content" },
-  { name: "My Posts", icon: Megaphone, href: "/dashboard/posts" },
-  { name: "Content History", icon: Clock, href: "/dashboard/history" },
-  { name: "Review Manager", icon: Star, href: "/dashboard/reviews" },
-  { name: "Review Campaigns", icon: Users, href: "/dashboard/campaigns" },
-  { name: "Sales Inbox", icon: MessageSquare, href: "/dashboard/inbox" },
-  { name: "WhatsApp CRM", icon: Users, href: "/dashboard/crm" },
->>>>>>> integration-samarth
 ];
 
 export function Sidebar() {

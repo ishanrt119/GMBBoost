@@ -3,19 +3,16 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ILead extends Document {
   tenantId: string;
   organizationId?: string;
-  businessId: mongoose.Types.ObjectId;
+  businessId?: mongoose.Types.ObjectId;
   assignedUserId?: mongoose.Types.ObjectId;
   
   name: string;
   email?: string;
   phone?: string;
-  source: 'WhatsApp' | 'Website' | 'Manual' | 'Instagram' | 'Facebook' | 'Referral';
+  source: 'WhatsApp' | 'Website' | 'Manual' | 'Instagram' | 'Facebook' | 'Referral' | 'Demo Booking';
+  leadType: 'Client Prospect' | 'Platform Prospect';
   status: 'active' | 'inactive';
-<<<<<<< HEAD
   pipelineStage: string | null;
-=======
-  pipelineStage: 'New' | 'Contacted' | 'Qualified' | 'Interested' | 'Not Interested' | 'Converted';
->>>>>>> integration-samarth
   tags: string[];
   notes?: string;
   
@@ -33,7 +30,7 @@ const LeadSchema: Schema = new Schema(
   {
     tenantId: { type: String, required: true, index: true },
     organizationId: { type: String, index: true },
-    businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', index: true },
     assignedUserId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     
     name: { type: String, required: true },
@@ -41,19 +38,18 @@ const LeadSchema: Schema = new Schema(
     phone: { type: String },
     source: { 
       type: String, 
-      enum: ['WhatsApp', 'Website', 'Manual', 'Instagram', 'Facebook', 'Referral'],
+      enum: ['WhatsApp', 'Website', 'Manual', 'Instagram', 'Facebook', 'Referral', 'Demo Booking'],
       default: 'Manual'
+    },
+    leadType: {
+      type: String,
+      enum: ['Client Prospect', 'Platform Prospect'],
+      default: 'Client Prospect'
     },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     pipelineStage: { 
-<<<<<<< HEAD
   type: String,
   default: null
-=======
-      type: String, 
-      enum: ['New', 'Contacted', 'Qualified', 'Interested', 'Not Interested', 'Converted'],
-      default: 'New'
->>>>>>> integration-samarth
     },
     tags: [{ type: String }],
     notes: { type: String },

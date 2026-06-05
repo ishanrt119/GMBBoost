@@ -3,9 +3,13 @@ import dbConnect from '@/lib/mongodb';
 import Activity from '@/models/Activity';
 import FollowUp from '@/models/FollowUp';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     
     await dbConnect();
 

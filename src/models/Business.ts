@@ -43,10 +43,7 @@ export interface IBusiness extends Document {
     reminderDays: number;
     messageTemplate?: string;
   };
-<<<<<<< HEAD
   kanbanColumns: string[];
-=======
->>>>>>> integration-samarth
   onboardingCompleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -96,17 +93,10 @@ const BusinessSchema: Schema = new Schema(
       reminderDays: { type: Number, default: 3 },
       messageTemplate: { type: String }
     },
-<<<<<<< HEAD
     kanbanColumns: [{ type: String }],
-=======
->>>>>>> integration-samarth
     onboardingCompleted: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
 
-<<<<<<< HEAD
 export default mongoose.models.Business || mongoose.model<IBusiness>('Business', BusinessSchema);
-=======
-export default mongoose.models.Business || mongoose.model<IBusiness>('Business', BusinessSchema);
->>>>>>> integration-samarth

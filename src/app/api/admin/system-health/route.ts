@@ -23,7 +23,7 @@ export async function GET() {
       messageBacklog,
       recentErrors,
     ] = await Promise.all([
-      mongoose.connection.db.command({ ping: 1 }).then(() => true).catch(() => false),
+      mongoose.connection.db?.command({ ping: 1 }).then(() => true).catch(() => false),
       JobQueue.countDocuments({ status: 'PENDING' }),
       AutomationLog.countDocuments({
         status: 'failed',

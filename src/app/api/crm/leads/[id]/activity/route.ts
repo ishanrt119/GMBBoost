@@ -3,9 +3,13 @@ import dbConnect from '@/lib/mongodb';
 import Activity from '@/models/Activity';
 import Lead from '@/models/Lead';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     const data = await req.json();
     
     await dbConnect();

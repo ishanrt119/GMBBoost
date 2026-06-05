@@ -157,7 +157,7 @@ export default function RevenuePage() {
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip
-                    formatter={(value: number) => [`$${value}`, 'Revenue']}
+                    formatter={(value: any) => [`$${value}`, 'Revenue']}
                   />
                   <Bar dataKey="revenue" fill="#7c3aed" radius={[6, 6, 0, 0]} />
                 </BarChart>
