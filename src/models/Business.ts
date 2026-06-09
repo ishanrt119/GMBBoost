@@ -3,9 +3,13 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IBusiness extends Document {
   name: string;
   category: string;
+  description?: string;
   address: string;
+  area?: string;
   city?: string;
   state?: string;
+  country?: string;
+  googleMapsUrl?: string;
   coordinates?: {
     lat: number;
     lng: number;
@@ -61,9 +65,13 @@ const BusinessSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
     category: { type: String, required: true },
+    description: { type: String },
     address: { type: String, required: true },
+    area: { type: String },
     city: { type: String },
     state: { type: String },
+    country: { type: String },
+    googleMapsUrl: { type: String },
     coordinates: {
       lat: { type: Number },
       lng: { type: Number }

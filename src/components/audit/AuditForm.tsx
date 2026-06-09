@@ -2,63 +2,23 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useBusiness } from '@/context/BusinessContext';
-import { Zap, AlertTriangle, X, CheckCircle2 } from 'lucide-react';
+import { Zap, AlertTriangle, CheckCircle2, Settings, Building2, MapPin, Tag, Globe, Phone, Map as MapIcon, Hash } from 'lucide-react';
 
 export default function AuditForm() {
   const router = useRouter();
   const { activeBusiness } = useBusiness();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showMissingInfoPopup, setShowMissingInfoPopup] = useState(false);
 
-  // For the popup form to collect missing info
-  const [missingData, setMissingData] = useState({
-    userDefinedCategory: '',
-    googlePlaceId: ''
-  });
-
-  const validateBusiness = () => {
-    if (!activeBusiness) {
-      setError('No active business selected.');
-      return false;
-    }
-
-    if (!activeBusiness.userDefinedCategory || !activeBusiness.googlePlaceId) {
-      setMissingData({
-        userDefinedCategory: activeBusiness.userDefinedCategory || '',
-        googlePlaceId: activeBusiness.googlePlaceId || ''
-      });
-      setShowMissingInfoPopup(true);
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleUpdateMissingInfo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/business/${activeBusiness?._id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(missingData),
-      });
-
-      if (!res.ok) throw new Error('Failed to update business details.');
-      
-      // Need to force a reload or context update here, but for now we close and run audit
-      setShowMissingInfoPopup(false);
-      
-      // Re-run the audit trigger directly since data is saved
-      await triggerAudit();
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-    }
+  const getMissingFields = () => {
+    if (!activeBusiness) return ['Business Selection'];
+    const missing = [];
+    if (!activeBusiness.userDefinedCategory) missing.push('Business Category');
+    if (!activeBusiness.googlePlaceId) missing.push('Google Place ID');
+    if (!activeBusiness.location?.coordinates || activeBusiness.location.coordinates.length < 2) missing.push('Map Coordinates');
+    return missing;
   };
 
   const triggerAudit = async () => {
@@ -85,12 +45,6 @@ export default function AuditForm() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (validateBusiness()) {
-      await triggerAudit();
-    }
-  };
-
   if (!activeBusiness) {
     return (
       <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
@@ -99,55 +53,174 @@ export default function AuditForm() {
     );
   }
 
+  const missingFields = getMissingFields();
+  const isReady = missingFields.length === 0;
+
+  // @ts-ignore - city/state might not be on the activeBusiness type directly but are in the DB. fallback to address.
+  const locationStr = [activeBusiness.city, activeBusiness.state].filter(Boolean).join(', ');
+  const displayLocation = locationStr || activeBusiness.address || 'Location hidden';
+
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 text-center"
+        className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-10"
       >
-        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <Zap size={32} />
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100">
+            <Zap size={32} className={isReady ? "text-blue-600" : "text-slate-400"} />
+          </div>
+          <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Generate AI Audit</h2>
+          <p className="text-slate-500 text-lg max-w-xl mx-auto">
+            Generate a comprehensive technical, SEO, and competitor analysis using your connected business profile.
+          </p>
         </div>
-        
-        <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Run AI Audit</h2>
-        <p className="text-slate-500 mb-8 text-lg max-w-lg mx-auto">
-          Generate a comprehensive technical, SEO, and competitor analysis for <span className="font-bold text-slate-700">{activeBusiness.name}</span>.
-        </p>
 
-        <div className="bg-slate-50 rounded-xl p-6 mb-8 text-left border border-slate-100">
-          <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-            Business Context Loaded
-          </h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-slate-500 mb-1">Business Name</p>
-              <p className="font-medium text-slate-900 truncate">{activeBusiness.name}</p>
+        {isReady ? (
+          <div className="bg-white rounded-xl mb-10 text-left border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-slate-50 border-b border-slate-200 p-5 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-slate-500" />
+                Connected Business Profile
+              </h3>
+              <span className="inline-flex items-center gap-1.5 py-1 px-3 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Ready for Audit
+              </span>
             </div>
-            <div>
-              <p className="text-slate-500 mb-1">Category</p>
-              <p className="font-medium text-slate-900 truncate">{activeBusiness.userDefinedCategory || <span className="text-amber-500">Missing</span>}</p>
+            
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Field 1: Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5" /> Business Name
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-700 font-medium truncate">
+                  {activeBusiness.name}
+                </div>
+              </div>
+
+              {/* Field 2: Category */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5" /> Category
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-700 font-medium truncate">
+                  {activeBusiness.userDefinedCategory || 'N/A'}
+                </div>
+              </div>
+
+              {/* Field 3: Location */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> Location
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-700 font-medium truncate">
+                  {displayLocation}
+                </div>
+              </div>
+
+              {/* Field 4: Address */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <MapIcon className="w-3.5 h-3.5" /> Full Address
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-700 font-medium truncate">
+                  {activeBusiness.address || 'N/A'}
+                </div>
+              </div>
+
+              {/* Field 5: Website */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" /> Website
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-700 font-medium truncate">
+                  {activeBusiness.website || 'N/A'}
+                </div>
+              </div>
+
+              {/* Field 6: Phone */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" /> Phone
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-700 font-medium truncate">
+                  {activeBusiness.phone || 'N/A'}
+                </div>
+              </div>
+
+              {/* Field 7: Google Place ID (Full Width) */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5" /> Google Place ID
+                </label>
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-500 font-mono text-sm truncate">
+                  {activeBusiness.googlePlaceId || 'N/A'}
+                </div>
+              </div>
             </div>
-            <div className="col-span-2">
-              <p className="text-slate-500 mb-1">Google Place ID</p>
-              <p className="font-medium text-slate-900 truncate font-mono text-xs">{activeBusiness.googlePlaceId || <span className="text-amber-500">Missing</span>}</p>
+            
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 text-center">
+              This information is auto-filled from your onboarding profile. To make changes, visit Business Settings.
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-amber-50 rounded-xl p-8 mb-10 text-left border border-amber-200 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-amber-900 mb-2">
+                  Please complete your business setup before generating an audit.
+                </h3>
+                <p className="text-amber-700 mb-5">
+                  Your business profile is missing required information. We need this data to accurately evaluate your online presence.
+                </p>
+                
+                <div className="bg-white/60 rounded-lg p-4 mb-6 border border-amber-200/50">
+                  <p className="text-sm font-semibold text-amber-900 mb-2">Missing Information:</p>
+                  <ul className="list-none space-y-2">
+                    {missingFields.map(field => (
+                      <li key={field} className="flex items-center gap-2 text-sm text-amber-800">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        {field}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => router.push('/dashboard/business')}
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-sm hover:shadow flex items-center gap-2"
+                >
+                  <Settings className="w-5 h-5" />
+                  Complete Setup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100 flex items-start gap-3 text-left">
-            <AlertTriangle className="w-5 h-5 shrink-0" />
-            {error}
+          <div className="mb-8 p-5 bg-red-50 text-red-700 rounded-xl border border-red-100 flex items-start gap-3 text-left shadow-sm">
+            <AlertTriangle className="w-6 h-6 shrink-0 text-red-500" />
+            <div>
+              <h4 className="font-semibold mb-1">Audit Failed</h4>
+              <p className="text-sm">{error}</p>
+            </div>
           </div>
         )}
 
         <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className={`w-full py-4 px-4 rounded-xl text-white font-bold text-lg transition-all flex items-center justify-center gap-2 ${
-            loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
+          onClick={triggerAudit}
+          disabled={loading || !isReady}
+          className={`w-full py-5 px-6 rounded-xl text-white font-bold text-lg transition-all flex items-center justify-center gap-3 ${
+            loading || !isReady 
+              ? 'bg-slate-300 cursor-not-allowed shadow-none' 
+              : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-xl hover:-translate-y-0.5'
           }`}
         >
           {loading ? (
@@ -160,75 +233,12 @@ export default function AuditForm() {
             </>
           ) : (
             <>
-              <Zap className="w-5 h-5" />
-              Generate Enterprise Audit
+              <Zap className="w-6 h-6" />
+              Generate Audit
             </>
           )}
         </button>
       </motion.div>
-
-      {/* Missing Info Popup */}
-      <AnimatePresence>
-        {showMissingInfoPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 w-full max-w-md relative"
-            >
-              <button 
-                onClick={() => setShowMissingInfoPopup(false)}
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <div className="flex items-center gap-3 mb-2 text-amber-600">
-                <AlertTriangle className="w-6 h-6" />
-                <h3 className="text-xl font-bold">Missing Information</h3>
-              </div>
-              <p className="text-slate-500 mb-6 text-sm">
-                To run a highly accurate audit, we need your Google Place ID and Business Category. This will only be asked once.
-              </p>
-
-              <form onSubmit={handleUpdateMissingInfo} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Business Category</label>
-                  <input
-                    type="text"
-                    required
-                    value={missingData.userDefinedCategory}
-                    onChange={(e) => setMissingData({...missingData, userDefinedCategory: e.target.value})}
-                    placeholder="e.g. Plumber, University, Dentist"
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Used for competitor analysis and SEO.</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Google Place ID</label>
-                  <input
-                    type="text"
-                    required
-                    value={missingData.googlePlaceId}
-                    onChange={(e) => setMissingData({...missingData, googlePlaceId: e.target.value})}
-                    placeholder="ChIJ..."
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 px-4 mt-2 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save & Run Audit'}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

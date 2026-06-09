@@ -10,6 +10,8 @@
  */
 import dbConnect from '../../lib/mongodb';
 import Audit from '../../models/Audit';
+import Business from '../../models/Business';
+import Review from '../../models/Review';
 import { getGMBProvider } from '../gmb/provider';
 import { generateAIAudit } from '../ai/auditEngine';
 import {
@@ -29,21 +31,41 @@ export async function processAuditJob(auditId: string) {
   }
 
   try {
+    const business = await Business.findById(audit.businessId);
+    if (!business) throw new Error(`Business not found for audit ${auditId}`);
+
+    // Fetch unified reviews
+    const reviewsData = await Review.find({ businessId: business._id });
+    const formattedReviews = reviewsData.map(r => ({
+      author: r.reviewerName || 'Anonymous',
+      rating: r.rating || 0,
+      text: r.reviewText || '',
+      date: r.date?.toISOString() || new Date().toISOString(),
+      ownerReply: r.replyText,
+    }));
+
     // ── Step 1: Fetch real business data from Google Places ──────────────────
     const gmbProvider = getGMBProvider();
     const businessData = await gmbProvider.fetchBusinessDetails(
-      audit.businessName,
+      business.name,
       audit.location,
       audit.gbpUrl
     );
+    
+    // Inject our unified reviews instead of Places API ones
+    if (!businessData) {
+      throw new Error(`Failed to fetch business details from Google Places API for ${business.name}`);
+    }
+    businessData.reviews = formattedReviews;
+    businessData.reviewsCount = Math.max(businessData.reviewsCount, formattedReviews.length);
 
-    // ── Step 2: Fetch real competitors via category+location search ─────────
-    // Extract a clean city name from the full address so we search
-    // "IT training institute in Kolkata" not "IT training institute in
-    // 11th Floor, Room 1104, Ambuja Neotia, Sector V, Bidhan Nagar, Kolkata"
-    const cityLocation = extractCity(businessData.location) || audit.location;
+    // ── Step 2: Fetch real competitors via exact area + city ─────────
+    const cityLocation = [business.area, business.city].filter(Boolean).join(', ') || 
+                         extractCity(businessData.location || audit.location) || 
+                         audit.location;
 
-    const targetCategory = audit.metadata?.userDefinedCategory || businessData.primaryCategory;
+    // Strict SEO category mapping from onboarding
+    const targetCategory = business.userDefinedCategory || business.category || businessData.primaryCategory || 'Local Business';
 
     let realCompetitors = await fetchNearbyCompetitors(
       targetCategory,
@@ -113,7 +135,7 @@ export async function processAuditJob(auditId: string) {
         reviews:         businessData.reviews,
       },
       realCompetitors,
-      realKeywordRankings.length > 0 ? realKeywordRankings : aiResult.keywords.map(k => ({
+      realKeywordRankings.length > 0 ? realKeywordRankings : (aiResult.keywordOpportunities || []).slice(0, 5).map(k => ({
         keyword: k, rank: 0, source: 'estimated' as const
       })),
       aiResult.servicesCount,
@@ -121,20 +143,15 @@ export async function processAuditJob(auditId: string) {
     );
 
     // ── Step 6: Save everything ──────────────────────────────────────────────
-    const { overallScore, competitors, recommendations, keywords, servicesCount, categoriesCount, ...auditDataRest } = aiResult;
+    const { servicesCount, categoriesCount, competitors, ...auditDataRest } = aiResult;
 
-    // Override LLM hallucinated scores with deterministic ones
-    auditDataRest.completenessScore = realMetrics.calculatedProfileScore;
-    auditDataRest.engagementScore = realMetrics.calculatedEngagementScore;
-    
-    // Mathematically derive overall score to prevent 10/100 collapse
+    // Mathematically derive overall score to prevent 10/100 collapse (Average of LLM scores)
     const calculatedOverallScore = Math.round(
-      (auditDataRest.completenessScore + auditDataRest.engagementScore + auditDataRest.sentimentScore + auditDataRest.keywordScore) / 4
+      (auditDataRest.businessHealthScore + auditDataRest.seoScore + auditDataRest.profileScore + auditDataRest.reviewScore + auditDataRest.searchVisibilityScore) / 5
     );
 
     audit.overallScore   = calculatedOverallScore;
     audit.competitors    = competitors;
-    audit.recommendations = recommendations;
     audit.realMetrics    = realMetrics;
     audit.auditData      = auditDataRest as any;
     audit.status         = 'COMPLETED';
@@ -210,9 +227,10 @@ async function generateTargetKeywords(
 ${context}
 
 Rules:
-- Each query must include the city name "${location}"
-- Queries must be specific to what this business actually does
-- Use natural customer language (e.g. "best digital marketing course in Kolkata")
+- Each query must include the location "${location}"
+- Queries must be strictly based on the Business Category and Description
+- NEVER use generic Google types like 'establishment', 'point_of_interest', 'premise', 'locality'
+- Use natural customer language (e.g. "best digital marketing course in Kolkata", "top dental clinic near me")
 - Return ONLY a JSON object: { "keywords": ["query1", "query2", "query3", "query4", "query5"] }
 - No explanations, no extra fields`,
       }],

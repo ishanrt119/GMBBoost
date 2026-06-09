@@ -50,14 +50,20 @@ export async function POST(req: Request) {
     if (!business.googlePlaceId) {
       return NextResponse.json({ error: 'Google Place ID is missing. Please connect your Google Business Profile.' }, { status: 400 });
     }
-
-    // Check feature gating limits
-    const usageCheck = await checkUsageLimit(business._id, 'audits');
-    if (!usageCheck.allowed) {
-      return NextResponse.json({ error: usageCheck.reason, code: 'UPGRADE_REQUIRED' }, { status: 403 });
+    
+    if (!business.location?.coordinates || business.location.coordinates.length < 2) {
+      return NextResponse.json({ error: 'Business location coordinates are missing. Please update your business address.' }, { status: 400 });
     }
 
-    await incrementUsage(business._id, 'audits');
+    // Check feature gating limits (Temporarily Bypassed per request)
+    const bypassMode = process.env.AUDIT_BYPASS_MODE === 'true' || true;
+    if (!bypassMode) {
+      const usageCheck = await checkUsageLimit(business._id, 'audits');
+      if (!usageCheck.allowed) {
+        return NextResponse.json({ error: usageCheck.reason, code: 'UPGRADE_REQUIRED' }, { status: 403 });
+      }
+      await incrementUsage(business._id, 'audits');
+    }
 
     // Create a pending audit
     const locationStr = [business.city, business.state].filter(Boolean).join(', ');
@@ -67,14 +73,28 @@ export async function POST(req: Request) {
       tenantId: authResult.user.organizationId?.toString() || authResult.userId,
       userId: authResult.userId,
       organizationId: authResult.user.organizationId?.toString() || 'default',
+      
+      businessId: business._id,
       businessName: business.name,
+      userDefinedCategory: business.userDefinedCategory,
+      googlePlaceId: business.googlePlaceId,
+      website: business.website,
+      phone: business.phone,
+      address: business.address,
+      city: business.city,
+      state: business.state,
+      country: business.country,
+      latitude: business.location.coordinates[1],
+      longitude: business.location.coordinates[0],
+      googleBusinessProfile: `https://search.google.com/local/writereview?placeid=${business.googlePlaceId}`,
+
       location: finalLocation,
       gbpUrl: `https://search.google.com/local/writereview?placeid=${business.googlePlaceId}`,
       status: 'PENDING',
       metadata: {
         googlePlaceId: business.googlePlaceId,
         userDefinedCategory: business.userDefinedCategory,
-        coordinates: business.location?.coordinates
+        coordinates: business.location.coordinates
       }
     });
 

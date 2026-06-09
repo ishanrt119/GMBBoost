@@ -24,17 +24,21 @@ export interface IKeywordRanking {
 }
 
 export interface IAuditData {
-  completenessScore: number;
-  keywordScore: number;
-  sentimentScore: number;
-  engagementScore: number;
-  quickWins: string[];
+  executiveSummary: string;
+  businessHealthScore: number;
+  seoScore: number;
+  profileScore: number;
+  reviewScore: number;
+  searchVisibilityScore: number;
+  competitorAnalysis: string;
   strengths: string[];
   weaknesses: string[];
-  seoInsights: string;
-  reviewInsights: string;
-  contentInsights: string;
-  growthOpportunities: string;
+  keywordOpportunities: string[];
+  reviewOpportunities: string[];
+  growthOpportunities: string[];
+  actionPlan30Day: string[];
+  roadmap90Day: string[];
+  priorityRecommendations: string[];
 }
 
 /** Real business metrics fetched from APIs — stored separately from AI-generated auditData */
@@ -63,7 +67,22 @@ export interface IAudit extends Document {
   tenantId: string;
   userId: string;
   organizationId: string;
+  
+  // Phase 4: Direct Business Mapping
+  businessId: mongoose.Types.ObjectId;
   businessName: string;
+  userDefinedCategory?: string;
+  googlePlaceId?: string;
+  website?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  googleBusinessProfile?: string;
+  
   location: string;
   gbpUrl?: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
@@ -101,17 +120,21 @@ const KeywordRankingSchema = new Schema<IKeywordRanking>({
 });
 
 const AuditDataSchema = new Schema<IAuditData>({
-  completenessScore: { type: Number, required: true },
-  keywordScore: { type: Number, required: true },
-  sentimentScore: { type: Number, required: true },
-  engagementScore: { type: Number, required: true },
-  quickWins: { type: [String], required: true },
+  executiveSummary: { type: String, required: true },
+  businessHealthScore: { type: Number, required: true },
+  seoScore: { type: Number, required: true },
+  profileScore: { type: Number, required: true },
+  reviewScore: { type: Number, required: true },
+  searchVisibilityScore: { type: Number, required: true },
+  competitorAnalysis: { type: String, required: true },
   strengths: { type: [String], required: true },
   weaknesses: { type: [String], required: true },
-  seoInsights: { type: String, required: true },
-  reviewInsights: { type: String, required: true },
-  contentInsights: { type: String, required: true },
-  growthOpportunities: { type: String, required: true },
+  keywordOpportunities: { type: [String], required: true },
+  reviewOpportunities: { type: [String], required: true },
+  growthOpportunities: { type: [String], required: true },
+  actionPlan30Day: { type: [String], required: true },
+  roadmap90Day: { type: [String], required: true },
+  priorityRecommendations: { type: [String], required: true },
 });
 
 const RealMetricsSchema = new Schema<IRealMetrics>({
@@ -140,7 +163,22 @@ const AuditSchema = new Schema<IAudit>(
     tenantId: { type: String, required: true, index: true },
     userId: { type: String, required: true },
     organizationId: { type: String, required: true },
+    
+    // Business Mapping
+    businessId: { type: Schema.Types.ObjectId, ref: 'Business', index: true },
     businessName: { type: String, required: true },
+    userDefinedCategory: { type: String },
+    googlePlaceId: { type: String },
+    website: { type: String },
+    phone: { type: String },
+    address: { type: String },
+    city: { type: String },
+    state: { type: String },
+    country: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    googleBusinessProfile: { type: String },
+    
     location: { type: String, required: true },
     gbpUrl: { type: String },
     status: {

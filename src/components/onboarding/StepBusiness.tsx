@@ -10,7 +10,6 @@ interface Props {
   onBack: () => void;
 }
 
-// Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -35,7 +34,6 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
   const [manualMode, setManualMode] = useState(false);
   const [error, setError] = useState('');
 
-  // Effect to fetch autocomplete suggestions
   useEffect(() => {
     if (debouncedQuery.length < 3) {
       setSuggestions([]);
@@ -53,7 +51,6 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
           setShowDropdown(true);
           setError('');
         } else {
-          // If Google API fails (e.g. REQUEST_DENIED for billing), show the error
           setError(`Maps API Error: ${json.error || 'Failed to fetch suggestions'}`);
           setSuggestions([]);
           setShowDropdown(false);
@@ -81,26 +78,27 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
       
       if (json.success && json.data) {
         const d = json.data;
-        // Auto-generate the direct review link
         const generatedReviewLink = `https://search.google.com/local/writereview?placeid=${placeId}`;
 
-        // Auto-fill everything
+        // DO NOT auto-fill category, description, area, city, state, country
         updateData({
           businessName: d.name || mainText,
           address: d.formattedAddress || '',
           phone: d.phoneNumber || '',
           website: d.website || '',
-          category: d.categories && d.categories.length > 0 ? d.categories[0].replace(/_/g, ' ') : '',
           googlePlaceId: placeId,
           googleMapsUrl: d.googleMapsUrl || '',
           latitude: d.latitude || null,
           longitude: d.longitude || null,
           rating: d.rating || 0,
           totalReviews: d.totalReviews || 0,
-          gbpUrl: generatedReviewLink
+          gbpUrl: generatedReviewLink,
+          // Extract basic location strings if possible, but leave it to the user to verify
+          city: d.city || '',
+          state: d.state || '',
+          country: d.country || ''
         });
         
-        // Open manual mode to let them review/edit the autofilled data
         setManualMode(true);
       } else {
         throw new Error('Failed to fetch details');
@@ -115,20 +113,12 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
   };
 
   const handleContinue = () => {
-    if (!data.businessName || !data.phone) {
-      setError('Please fill in the required fields (Business Name & Phone).');
+    if (!data.businessName || !data.phone || !data.category || !data.city || !data.area || !data.description) {
+      setError('Please fill in all required fields: Business Name, Category, Description, Phone, City, and Area.');
       return;
     }
     setError('');
-    
-    // Auto skip Step 5 (Google Profiling) if placeId already exists
-    if (data.googlePlaceId) {
-      // In the parent orchestrator this would be slightly tricky to skip a specific step natively
-      // But we can just proceed to next, and Step 5 will be pre-filled!
-      onNext();
-    } else {
-      onNext();
-    }
+    onNext();
   };
 
   return (
@@ -146,7 +136,6 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
           </div>
         )}
 
-        {/* GOOGLE SEARCH BAR */}
         {!manualMode && (
           <div className="relative z-50">
             <label className="block text-sm font-bold text-slate-900 mb-2">Search Business Name</label>
@@ -171,7 +160,6 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
               />
             </div>
 
-            {/* AUTOCOMPLETE DROPDOWN */}
             <AnimatePresence>
               {showDropdown && suggestions.length > 0 && (
                 <motion.div
@@ -211,64 +199,160 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
           </div>
         )}
 
-        {/* MANUAL / AUTO-FILLED FORM */}
         {manualMode && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-6"
           >
             {data.googlePlaceId && (
               <div className="p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3 mb-6">
                 <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
                 <div>
                   <div className="text-sm font-bold text-green-800">Connected to Google Maps</div>
-                  <div className="text-xs text-green-600 mt-0.5">We've auto-filled your details. Please review them below.</div>
+                  <div className="text-xs text-green-600 mt-0.5">We've auto-filled your details. Please provide the remaining information below.</div>
                 </div>
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">Location/Business Name *</label>
-              <input
-                type="text"
-                value={data.businessName}
-                onChange={e => updateData({ businessName: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
-                placeholder="e.g. Acme Downtown"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2">Category</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Business Name *</label>
+                <input
+                  type="text"
+                  value={data.businessName}
+                  onChange={e => updateData({ businessName: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                  placeholder="e.g. Acme Downtown"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Business Category *</label>
+                <p className="text-xs text-slate-500 mb-2">Please enter your exact business category manually (e.g. University, Dental Clinic, Restaurant).</p>
                 <input
                   type="text"
                   value={data.category}
                   onChange={e => updateData({ category: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none capitalize"
-                  placeholder="e.g. dental clinic"
+                  placeholder="e.g. Dental Clinic"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2">Phone Number *</label>
-                <input
-                  type="tel"
-                  value={data.phone}
-                  onChange={e => updateData({ phone: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
-                  placeholder="+1 (555) 000-0000"
+                <label className="block text-sm font-bold text-slate-900 mb-2">Business Description *</label>
+                <textarea
+                  value={data.description}
+                  onChange={e => updateData({ description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none resize-none"
+                  placeholder="Tell us what your business does..."
                 />
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">Address</label>
-              <input
-                type="text"
-                value={data.address}
-                onChange={e => updateData({ address: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
-                placeholder="123 Main St, City, State"
-              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">City *</label>
+                  <input
+                    type="text"
+                    value={data.city}
+                    onChange={e => updateData({ city: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    placeholder="e.g. Pune"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">Area / Locality *</label>
+                  <input
+                    type="text"
+                    value={data.area}
+                    onChange={e => updateData({ area: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    placeholder="e.g. PCMC"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">State</label>
+                  <input
+                    type="text"
+                    value={data.state}
+                    onChange={e => updateData({ state: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    placeholder="e.g. Maharashtra"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">Country</label>
+                  <input
+                    type="text"
+                    value={data.country}
+                    onChange={e => updateData({ country: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    placeholder="e.g. India"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">Phone Number *</label>
+                  <input
+                    type="tel"
+                    value={data.phone}
+                    onChange={e => updateData({ phone: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">Website</label>
+                  <input
+                    type="text"
+                    value={data.website}
+                    onChange={e => updateData({ website: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    placeholder="https://acme.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Full Address</label>
+                <input
+                  type="text"
+                  value={data.address}
+                  onChange={e => updateData({ address: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                  placeholder="123 Main St, City, State"
+                />
+              </div>
+
+              {!data.googlePlaceId && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-900 mb-2">Google Place ID</label>
+                    <input
+                      type="text"
+                      value={data.googlePlaceId}
+                      onChange={e => updateData({ googlePlaceId: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-900 mb-2">Google Maps URL</label>
+                    <input
+                      type="text"
+                      value={data.googleMapsUrl}
+                      onChange={e => updateData({ googleMapsUrl: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {!data.googlePlaceId && (
@@ -285,14 +369,13 @@ export default function StepBusiness({ data, updateData, onNext, onBack }: Props
         )}
       </div>
 
-      {/* FOOTER */}
       <div className="flex justify-between items-center pt-8 border-t border-slate-100 mt-auto">
         <button onClick={onBack} className="text-slate-500 font-bold hover:text-slate-900 transition-colors px-4 py-2">
           Back
         </button>
         <button 
           onClick={handleContinue}
-          disabled={!manualMode && !data.googlePlaceId} // Prevent continuing without searching or entering manual mode
+          disabled={!manualMode && !data.googlePlaceId}
           className="flex items-center gap-2 px-8 py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue <ArrowRight className="w-4 h-4" />

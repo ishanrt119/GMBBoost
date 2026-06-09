@@ -17,6 +17,12 @@ interface Business {
     isConnected: boolean;
     businessPhone?: string;
   };
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+  website?: string;
+  phone?: string;
 }
 
 interface BusinessContextType {

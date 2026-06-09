@@ -10,8 +10,13 @@ export interface OnboardingData {
   // Step 4
   businessName: string;
   category: string;
+  description: string;
   phone: string;
   address: string;
+  area: string;
+  city: string;
+  state: string;
+  country: string;
   website: string;
   // Step 5 (Auto-filled from Step 4)
   googlePlaceId: string;
@@ -41,8 +46,13 @@ export const initialOnboardingData: OnboardingData = {
   companyName: '',
   businessName: '',
   category: '',
+  description: '',
   phone: '',
   address: '',
+  area: '',
+  city: '',
+  state: '',
+  country: '',
   website: '',
   googlePlaceId: '',
   gbpUrl: '',
