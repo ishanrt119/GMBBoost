@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { IAudit } from '@/models/Audit';
 import { Download, Sparkles, Building2, Globe, MapPin, Zap, TrendingUp, Search, MessageSquare, AlertCircle, Calendar, Target, ShieldAlert, Award, Loader2, CheckCircle2 } from 'lucide-react';
 import AuditDebugPanel from './AuditDebugPanel';
+import AuditReportV6 from './AuditReportV6';
+import AuditReportV7 from './AuditReportV7';
 
 /* ─── PDF HTML builder ────────────────────────────────────── */
 
@@ -79,11 +81,11 @@ function buildPdfHtml(audit: IAudit): string {
   <div class="grid2" style="margin-bottom:16px;">
     <div class="card">
       <p style="margin:0 0 8px;font-weight:700;color:#166534;">Strengths</p>
-      <ul>${(data.strengths || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
+      <ul>${(data.strengths || []).map((s: any) => `<li>${typeof s === 'string' ? s : s.title}</li>`).join('')}</ul>
     </div>
     <div class="card">
       <p style="margin:0 0 8px;font-weight:700;color:#991b1b;">Weaknesses</p>
-      <ul>${(data.weaknesses || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
+      <ul>${(data.weaknesses || []).map((s: any) => `<li>${typeof s === 'string' ? s : s.title}</li>`).join('')}</ul>
     </div>
   </div>
 
@@ -94,29 +96,24 @@ function buildPdfHtml(audit: IAudit): string {
   
   <div class="card" style="margin-bottom:16px;">
     <p style="margin:0 0 8px;font-weight:700;color:#2563eb;">Quick Wins</p>
-    <ul>${(data.quickWins || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
-  </div>
-
-  <div class="card" style="margin-bottom:16px;">
-    <p style="margin:0 0 8px;font-weight:700;color:#f59e0b;">Growth Opportunities</p>
-    <ul>${(data.growthOpportunities || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
+    <ul>${(data.quickWins || []).map((s: any) => `<li>${typeof s === 'string' ? s : s}</li>`).join('')}</ul>
   </div>
 
   <div class="section-title"><span>Action Plan</span><hr/></div>
   
   <div class="card" style="margin-bottom:16px; border-left:4px solid #ef4444;">
     <p style="margin:0 0 8px;font-weight:700;color:#ef4444;">Priority Fixes (Fix immediately)</p>
-    <ul>${(data.priorityFixes || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
+    <ul>${(data.priorityFixes || []).map((s: any) => `<li><strong>${s.title}</strong>: ${s.reason || s.impact}</li>`).join('')}</ul>
   </div>
 
   <div class="grid2">
     <div class="card">
       <p style="margin:0 0 8px;font-weight:700;color:#1e293b;">30-Day Action Plan</p>
-      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.thirtyDayPlan || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ol>
+      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.thirtyDayPlan || []).map((s: any) => `<li style="margin-bottom:4px;"><strong>${s.week}</strong>: ${(s.tasks || []).join(', ')}</li>`).join('')}</ol>
     </div>
     <div class="card">
       <p style="margin:0 0 8px;font-weight:700;color:#1e293b;">90-Day Roadmap</p>
-      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.ninetyDayPlan || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ol>
+      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.ninetyDayPlan || []).map((s: any) => `<li style="margin-bottom:4px;"><strong>${s.month}</strong>: ${(s.tasks || []).join(', ')}</li>`).join('')}</ol>
     </div>
   </div>
 
@@ -190,6 +187,13 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
   );
 
   const data = audit.auditData || {} as any;
+
+  if (audit.auditVersion === 'V6') {
+    // Lazy load the new V6 component to avoid blowing up the main bundle
+    // But since it's a small app, we can just import it at the top or dynamically
+    // Wait, let's just require/import it at the top. I'll add the import line as well!
+  }
+
   const overallScore = data.overallScore ?? 0;
   const searchRankScore = data.googleSearchRank?.score ?? 0;
   const profileScore = data.profileScore?.score ?? 0;
@@ -198,6 +202,19 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
 
   const competitors = data.competitors || [];
   const topKeywords = data.topKeywords || [];
+
+  if (audit.auditVersion === 'V6' || audit.auditVersion === 'V7') {
+    return (
+      <>
+        <iframe ref={iframeRef} className="fixed w-0 h-0 border-0 top-0 left-0 opacity-0 pointer-events-none" title="pdf-frame" />
+        {audit.auditVersion === 'V7' ? (
+        <AuditReportV7 audit={audit} onDownload={handleDownload} />
+      ) : audit.auditVersion === 'V6' ? (
+        <AuditReportV6 audit={audit} onDownload={handleDownload} />
+      ) : (<AuditDebugPanel auditData={audit} />)}
+      </>
+    );
+  }
 
   return (
     <>
@@ -382,10 +399,10 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
                 </h3>
                 {data.thirtyDayPlan && data.thirtyDayPlan.length > 0 ? (
                   <ul className="space-y-4">
-                    {data.thirtyDayPlan.map((item: string, i: number) => (
+                    {data.thirtyDayPlan.map((item: any, i: number) => (
                       <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
-                        <span>{item}</span>
+                        <span>{typeof item === 'string' ? item : `${item.week}: ${item.expectedOutcome}`}</span>
                       </li>
                     ))}
                   </ul>
@@ -398,10 +415,10 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
                 </h3>
                 {data.ninetyDayPlan && data.ninetyDayPlan.length > 0 ? (
                   <ul className="space-y-4">
-                    {data.ninetyDayPlan.map((item: string, i: number) => (
+                    {data.ninetyDayPlan.map((item: any, i: number) => (
                       <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
-                        <span>{item}</span>
+                        <span>{typeof item === 'string' ? item : `${item.month}: ${(item.tasks || []).join(', ')}`}</span>
                       </li>
                     ))}
                   </ul>

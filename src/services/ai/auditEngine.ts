@@ -1,124 +1,113 @@
 import Groq from 'groq-sdk';
-import { IAuditData } from '../../models/Audit';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function generateAIAudit(
   businessData: any
-): Promise<IAuditData | string> {
+): Promise<any> {
 
   const prompt = `
-You are an elite Google Business Profile consultant,
-Local SEO expert,
-Reputation management specialist,
-and Growth strategist.
+You are an elite Enterprise Business Intelligence Engine & Local SEO strategist.
 
-Analyze the following business.
+Your job is strictly to ANALYZE the explicit FACTS provided below. DO NOT invent competitors, DO NOT invent rankings, DO NOT invent metrics. DO NOT hallucinate Priority Fixes outside of the specific gaps identified.
 
-BUSINESS NAME:
-${businessData.businessName}
+FACTS:
+BUSINESS NAME: ${businessData.businessName}
+CATEGORY: ${businessData.category}
+TIER: ${businessData.tier || 'Unknown'}
+LOCATION: ${businessData.area || ''}, ${businessData.city || ''}, ${businessData.state || ''}
+WEBSITE: ${businessData.website || 'Missing'}
+DESCRIPTION: ${businessData.description || 'Missing'}
 
-CATEGORY:
-${businessData.category}
+NATIVE ANALYTICS (Do not modify these numbers, only analyze them):
+Profile Completion Score: ${businessData.nativeAnalytics?.profileCompletion?.completionPercentage || 0}%
+Review Count: ${businessData.nativeAnalytics?.reviewMetrics?.reviewCount || 0}
+Average Rating: ${businessData.nativeAnalytics?.reviewMetrics?.averageRating || 0}
 
-TIER:
-${businessData.tier || 'Unknown'}
-
-LOCATION:
-${businessData.area || ''}, ${businessData.city || ''}, ${businessData.state || ''}
-
-WEBSITE:
-${businessData.website || 'N/A'}
-
-DESCRIPTION:
-${businessData.description || 'N/A'}
-
-RATING:
-${businessData.rating || 0}
-
-TOTAL REVIEWS:
-${businessData.reviewCount || 0}
-
-REVIEWS:
-${JSON.stringify(businessData.reviews || [])}
-
-SUPPLIED COMPETITORS:
+COMPETITOR INTELLIGENCE:
 ${businessData.competitors && businessData.competitors.length > 0 ? JSON.stringify(businessData.competitors) : 'No suitable competitors found.'}
 
-Generate a complete GBP audit report.
+IDENTIFIED NATIVE PRIORITY FIXES (You MUST base your Priority Fixes entirely on this list):
+${JSON.stringify(businessData.nativeAnalytics?.priorityFixes || [])}
 
-Return STRICT JSON matching the schema below.
+BUSINESS INTELLIGENCE GAPS:
+${JSON.stringify(businessData.nativeAnalytics?.businessIntelligence || {})}
+
+TASK:
+Based strictly on the facts above, generate the missing analytical sections of the audit report.
 
 REQUIRED JSON FORMAT:
 {
-  "executiveSummary": "",
-  "overallScore": 0,
-  "googleSearchRank": {
-    "score": 0,
-    "status": ""
-  },
   "profileScore": {
-    "score": 0,
-    "reason": ""
+    "overallScore": 0,
+    "seoScore": ${businessData.nativeAnalytics?.seoScore?.score || 0},
+    "reviewScore": 0,
+    "profileCompletionScore": ${businessData.nativeAnalytics?.profileCompletion?.completionPercentage || 0},
+    "ratingScore": 0,
+    "contentScore": 0
   },
-  "seoScore": {
-    "score": 0,
-    "issues": [],
-    "recommendations": []
-  },
+  "keywordGapAnalysis": [
+    {
+      "keyword": "example missing keyword",
+      "found": false,
+      "missing": true,
+      "priority": "High"
+    }
+  ],
   "reviewAnalysis": {
-    "score": 0,
-    "reviewFrequency": "",
-    "responseRate": "",
-    "sentiment": "",
-    "strengths": [],
-    "weaknesses": []
+    "positivePercent": 0,
+    "neutralPercent": 0,
+    "negativePercent": 0,
+    "mostCommonPraises": [],
+    "mostCommonComplaints": []
   },
-  "profileCompletion": {
-    "score": 0,
-    "completedItems": [],
-    "missingItems": []
-  },
-  "topKeywords": [
+  "strengths": [
     {
-      "keyword": "",
-      "rank": ""
+      "title": "Example Strength",
+      "observation": "What data point proves this?",
+      "evidence": "Actual metric (e.g. 50 reviews)",
+      "impact": "Business impact"
     }
   ],
-  "competitors": [
+  "weaknesses": [
     {
-      "name": "",
-      "reviewCount": 0,
-      "rating": 0,
-      "category": "",
-      "distance": "",
-      "reason": "",
-      "strengthLevel": ""
+      "title": "Example Weakness",
+      "observation": "What data point proves this gap?",
+      "evidence": "Actual metric (e.g. 0 reviews vs avg 50)",
+      "risk": "Business risk"
     }
   ],
-  "strengths": [],
-  "weaknesses": [],
-  "quickWins": [],
-  "priorityFixes": [],
-  "thirtyDayPlan": [],
-  "ninetyDayPlan": [],
-  "growthOpportunities": []
+  "priorityFixes": [
+    {
+      "title": "Exact Title From IDENTIFIED NATIVE PRIORITY FIXES",
+      "reason": "Exact Reason From IDENTIFIED NATIVE PRIORITY FIXES",
+      "impact": "High",
+      "effort": "Low",
+      "expectedScoreGain": "+15 points",
+      "revenuePotential": "High"
+    }
+  ],
+  "thirtyDayPlan": [
+    { "week": "Week 1", "tasks": ["Task 1", "Task 2"], "expectedOutcome": "Outcome" },
+    { "week": "Week 2", "tasks": [], "expectedOutcome": "Outcome" },
+    { "week": "Week 3", "tasks": [], "expectedOutcome": "Outcome" },
+    { "week": "Week 4", "tasks": [], "expectedOutcome": "Outcome" }
+  ],
+  "ninetyDayPlan": [
+    { "month": "Month 1", "tasks": [], "focusAreas": ["SEO", "Reviews"] },
+    { "month": "Month 2", "tasks": [], "focusAreas": [] },
+    { "month": "Month 3", "tasks": [], "focusAreas": [] }
+  ]
 }
 
-COMPETITOR ANALYSIS INSTRUCTIONS:
-You are given a list of validated competitors. 
-You MUST NOT generate new competitors. 
-You MUST ONLY analyze competitors supplied in input under "SUPPLIED COMPETITORS".
-If the competitor list is empty ("No suitable competitors found."), return an empty array [] for "competitors".
-Do not invent any names.
-
-STRENGTHS & WEAKNESSES SECTION:
-Never return "Data Unavailable" for strengths. Always generate minimum 3 strengths and minimum 3 weaknesses from Reviews, Ratings, Profile Completion, Website, Services, Description, and Category.
-Even if competitor data fails or is empty, ALWAYS return minimum 3 strengths and 3 weaknesses based on the business's own metrics.
-
-FAIL SAFE:
-Never generate fake competitors, fake rankings, fake coordinates, or fake visibility grids.
-If you cannot confidently generate data for this business, return the exact string: "Data Unavailable" (do NOT return JSON if you are not confident).
+RULES:
+1. "strengths" MUST be generated from actual data (e.g., if Profile Score is 90%, make that a strength, list the evidence).
+2. "weaknesses" MUST be generated from actual gaps (e.g., use the Competitor Intelligence to find Review Gaps).
+3. Do NOT generate "Data Unavailable". Always provide minimum 3 strengths and 3 weaknesses.
+4. "priorityFixes" MUST perfectly match the items listed in IDENTIFIED NATIVE PRIORITY FIXES. Do not invent new fixes. Just add the Impact/Effort/expectedScoreGain scoring.
+5. "thirtyDayPlan" MUST specifically address the exact data gaps identified in "priorityFixes".
+6. "ninetyDayPlan" MUST build on the thirtyDayPlan and be tailored to the exact tier and review volume of this business. Do not hallucinate generic advice.
+7. EVERYTHING MUST BE STRICTLY DATA-DRIVEN. NO ESTIMATED OR FAKE SCORES.
 `;
 
   try {
@@ -131,16 +120,11 @@ If you cannot confidently generate data for this business, return the exact stri
     const content = response.choices[0].message?.content;
     if (!content) throw new Error('No content returned from Groq AI');
 
-    if (content.trim() === 'Data Unavailable' || content.includes('Data Unavailable')) {
-      return "Data Unavailable";
-    }
-
-    // Try to extract JSON if it was wrapped in markdown
-    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+    const jsonMatch = content.match(/```(?:json)?\n([\s\S]*?)\n```/);
     const jsonStr = jsonMatch ? jsonMatch[1] : content;
 
-    const parsed = JSON.parse(jsonStr);
-    return parsed as IAuditData;
+    const parsed = JSON.parse(jsonStr.trim());
+    return parsed;
   } catch (error: any) {
     console.error('Error generating AI audit:', error);
     throw new Error(`Failed to generate AI audit: ${error.message || error}`);

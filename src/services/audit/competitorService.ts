@@ -11,6 +11,12 @@ export interface Competitor {
   address?: string;
   website?: string;
   distance?: number;
+  similarityScore?: number;
+  strengthScore?: number;
+  gapAnalysis?: {
+    missingAdvantages: string[];
+    gapScore: number;
+  };
 }
 
 export interface BusinessData {
@@ -21,25 +27,26 @@ export interface BusinessData {
   state: string;
   country: string;
   reviewCount: number;
-}
-
-export function calculateTier(reviewCount: number, isEnterprise: boolean): string {
-  if (isEnterprise) return 'Tier 6';
-  if (reviewCount > 10000) return 'Tier 5';
-  if (reviewCount > 2000) return 'Tier 4';
-  if (reviewCount > 500) return 'Tier 3';
-  if (reviewCount > 100) return 'Tier 2';
-  return 'Tier 1';
+  website?: string;
 }
 
 export function isEnterpriseBrand(name: string, reviewCount: number): boolean {
   if (reviewCount > 10000) return true;
   const enterpriseNames = [
     'tcs', 'tata consultancy services', 'infosys', 'wipro', 'hcl', 'google', 'microsoft', 'amazon',
-    'cognizant', 'accenture', 'capgemini', 'ibm', 'oracle', 'cisco', 'apple', 'facebook', 'meta', 'desun hospital'
+    'cognizant', 'accenture', 'capgemini', 'ibm', 'oracle', 'cisco', 'apple', 'facebook', 'meta', 'desun hospital',
+    'tech mahindra'
   ];
   const lowerName = name.toLowerCase();
   return enterpriseNames.some(ent => lowerName.includes(ent) && lowerName.length <= ent.length + 10);
+}
+
+export function classifyBusinessTier(reviewCount: number, hasWebsite: boolean, isEnterprise: boolean): string {
+  if (isEnterprise) return 'Enterprise';
+  if (reviewCount >= 1000) return 'Large Business';
+  if (reviewCount >= 250) return 'Mid Market';
+  if (reviewCount >= 50 || hasWebsite) return 'Small Business';
+  return 'Micro Business';
 }
 
 export function calculateQualityScore(
@@ -57,22 +64,13 @@ export function calculateQualityScore(
     if (tCat.includes(cCat) || cCat.includes(tCat)) {
       score -= 10;
     } else {
-      score -= 30; // Significant mismatch
+      score -= 50; // Significant mismatch
     }
   }
 
-  // Tier Match
-  const tTierNum = parseInt(targetTier.replace('Tier ', '')) || 1;
-  const cTierNum = parseInt(competitorTier.replace('Tier ', '')) || 1;
-  const tierDiff = Math.abs(tTierNum - cTierNum);
-  if (tierDiff === 1) score -= 15;
-  if (tierDiff > 1) score -= 35; // Too far apart
-
-  // Review Count Difference (more granular)
-  if (targetBusiness.reviewCount > 0) {
-    const ratio = Math.max(targetBusiness.reviewCount, competitor.reviewCount) / Math.max(1, Math.min(targetBusiness.reviewCount, competitor.reviewCount));
-    if (ratio > 5) score -= 20;
-    else if (ratio > 3) score -= 10;
+  // Exact Tier Match Required
+  if (targetTier !== competitorTier) {
+    score -= 60; // Huge penalty for mismatched tier
   }
 
   // Exact Name Match Penalty (don't compare with self)
@@ -83,22 +81,57 @@ export function calculateQualityScore(
   return Math.max(0, score);
 }
 
+export function calculateGapAnalysis(target: BusinessData, comp: Competitor) {
+  const missingAdvantages = [];
+  let gapScore = 100;
+
+  if (comp.reviewCount > target.reviewCount) {
+    const diff = comp.reviewCount - target.reviewCount;
+    missingAdvantages.push(`+${diff} Reviews`);
+    gapScore -= Math.min(30, diff * 0.5);
+  }
+
+  if (comp.rating > 0) {
+    // Only target doesn't have a good rating
+    gapScore -= 10;
+  }
+
+  if (comp.website && !target.website) {
+    missingAdvantages.push('Active Website Presence');
+    gapScore -= 20;
+  }
+
+  if (comp.category && comp.category.toLowerCase() !== target.category.toLowerCase()) {
+    missingAdvantages.push(`Specialized Category: ${comp.category}`);
+  }
+
+  return {
+    missingAdvantages: missingAdvantages.slice(0, 3), // Top 3 advantages
+    gapScore: Math.max(0, gapScore)
+  };
+}
+
 export async function findCompetitors(businessData: BusinessData): Promise<{
   accepted: any[],
   rejected: any[],
-  targetTier: string
+  targetTier: string,
+  evidenceSource: string
 }> {
   const targetIsEnterprise = isEnterpriseBrand(businessData.businessName, businessData.reviewCount);
-  const targetTier = calculateTier(businessData.reviewCount, targetIsEnterprise);
+  const targetTier = classifyBusinessTier(businessData.reviewCount, !!businessData.website, targetIsEnterprise);
 
   const accepted: any[] = [];
   const rejected: any[] = [];
 
   const queries = [];
+  
+  // Strict Area Hierarchy
   if (businessData.area) {
     queries.push(`${businessData.category} in ${businessData.area}, ${businessData.city}`);
   }
   queries.push(`${businessData.category} in ${businessData.city}`);
+  // Add broad zone if city fails
+  queries.push(`Best ${businessData.category} in ${businessData.city}`);
 
   let foundEnough = false;
 
@@ -111,20 +144,21 @@ export async function findCompetitors(businessData: BusinessData): Promise<{
           engine: "google_maps",
           q: query,
           api_key: SERPAPI_KEY,
+          num: 20 // Fetch up to 20 to have better filtering pool
         },
       });
 
       const localResults = response.data.local_results || [];
 
       for (const result of localResults) {
-        if (accepted.length >= 6) {
+        if (accepted.length >= 10) {
           foundEnough = true;
           break;
         }
 
         const compReviewCount = result.reviews || 0;
         const compIsEnterprise = isEnterpriseBrand(result.title, compReviewCount);
-        const compTier = calculateTier(compReviewCount, compIsEnterprise);
+        const compTier = classifyBusinessTier(compReviewCount, !!result.website, compIsEnterprise);
 
         const competitor: Competitor = {
           name: result.title,
@@ -132,38 +166,45 @@ export async function findCompetitors(businessData: BusinessData): Promise<{
           reviewCount: compReviewCount,
           category: result.type || result.category || 'Unknown',
           address: result.address,
-          website: result.website
+          website: result.website,
+          strengthScore: Math.round((result.rating || 0) * 20) // Simple 0-100 scale
         };
 
-        // Enterprise rejection unless target is enterprise
-        if (compIsEnterprise && !targetIsEnterprise) {
-          rejected.push({
-            competitor,
-            reason: `Enterprise Brand Detected (${compTier})`
-          });
-          continue;
-        }
+        const similarityScore = calculateQualityScore(businessData, targetTier, competitor, compTier);
+        competitor.similarityScore = similarityScore;
 
-        const qualityScore = calculateQualityScore(businessData, targetTier, competitor, compTier);
-
-        if (qualityScore >= 70) {
-          // Avoid duplicates
+        if (similarityScore >= 50) { // Strict tier matching drops score heavily if wrong
           if (!accepted.find(c => c.name === competitor.name)) {
-            accepted.push({ ...competitor, qualityScore, tier: compTier });
+            // Calculate Gap Analysis natively
+            competitor.gapAnalysis = calculateGapAnalysis(businessData, competitor);
+            accepted.push({ ...competitor, tier: compTier });
           }
         } else {
           if (!rejected.find(r => r.competitor.name === competitor.name)) {
             rejected.push({
               competitor,
-              reason: `Quality Score Too Low (${qualityScore})`
+              reason: `Mismatched Business Tier: ${compTier} vs ${targetTier}`
             });
           }
         }
       }
+      
+      if (accepted.length >= 5) {
+        foundEnough = true;
+      }
+      
     } catch (error) {
       console.error(`Error fetching competitors for query "${query}":`, error);
     }
   }
 
-  return { accepted, rejected, targetTier };
+  // Sort by highest similarity
+  accepted.sort((a, b) => b.similarityScore - a.similarityScore);
+
+  return { 
+    accepted: accepted.slice(0, 10), 
+    rejected, 
+    targetTier,
+    evidenceSource: `Live SERP API Maps Search for queries: ${queries.join(' | ')}`
+  };
 }

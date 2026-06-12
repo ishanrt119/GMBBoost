@@ -1,69 +1,152 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface IKeywordRank {
+  keyword: string;
+  rank: number;
+  sourceQuery?: string;
+  confidence?: string;
+}
+
 export interface IGoogleSearchRank {
-  score: number;
-  status: string;
+  averageRank: number;
+  topKeywords: IKeywordRank[];
 }
 
 export interface IProfileScore {
-  score: number;
-  reason: string;
+  overallScore: number;
+  seoScore: number;
+  reviewScore: number;
+  profileCompletionScore: number;
+  ratingScore: number;
+  contentScore: number;
 }
 
 export interface ISeoScore {
   score: number;
-  issues: string[];
-  recommendations: string[];
+  missingKeywords: string[];
+  optimizationOpportunities: string[];
 }
 
 export interface IReviewAnalysis {
-  score: number;
-  reviewFrequency: string;
+  reviewCount: number;
+  averageRating: number;
+  reviewsPerWeek: number;
+  industryAverage: number;
   responseRate: string;
-  sentiment: string;
-  strengths: string[];
-  weaknesses: string[];
+  positivePercent: number;
+  neutralPercent: number;
+  negativePercent: number;
+  mostCommonPraises: string[];
+  mostCommonComplaints: string[];
+}
+
+export interface IChecklistItem {
+  field: string;
+  status: 'Complete' | 'Partial' | 'Missing';
 }
 
 export interface IProfileCompletion {
-  score: number;
-  completedItems: string[];
-  missingItems: string[];
+  completionPercentage: number;
+  checklist: IChecklistItem[];
 }
 
-export interface IKeywordRank {
+export interface IKeywordGap {
   keyword: string;
-  rank: string;
+  found: boolean;
+  missing: boolean;
+  priority: 'High' | 'Medium' | 'Low';
+}
+
+export interface ICompetitorGap {
+  missingAdvantages: string[];
+  gapScore: number;
 }
 
 export interface ICompetitor {
   name: string;
-  reviewCount: number;
-  rating: number;
   category: string;
+  rating: number;
+  reviewCount: number;
+  estimatedRank: number;
   distance: string;
   reason: string;
-  strengthLevel: string;
+  website?: string;
+  similarityScore?: number;
+  strengthScore?: number;
+  gapAnalysis?: ICompetitorGap;
+}
+
+export interface IPriorityFix {
+  title: string;
+  reason: string;
+  impact: 'High' | 'Medium' | 'Low';
+  effort: 'High' | 'Medium' | 'Low';
+  expectedScoreGain: string;
+  revenuePotential: 'High' | 'Medium' | 'Low'; // legacy compat
+}
+
+export interface IStrengthWeakness {
+  title: string;
+  observation?: string;
+  evidence: string;
+  impact?: string;
+  risk?: string;
+}
+
+export interface IThirtyDayPlan {
+  week: string;
+  tasks: string[];
+  expectedOutcome?: string;
+}
+
+export interface INinetyDayPlan {
+  month: string;
+  tasks: string[];
+  focusAreas?: string[];
+}
+
+export interface IDataQuality {
+  profileData: 'Complete' | 'Partial' | 'Unavailable';
+  competitorDiscovery: 'Complete' | 'Partial' | 'Unavailable';
+  keywordDiscovery: 'Complete' | 'Partial' | 'Unavailable';
+  reviewAnalysis: 'Complete' | 'Partial' | 'Unavailable';
+  websiteAnalysis: 'Complete' | 'Partial' | 'Unavailable';
+}
+
+export interface IAuditConfidence {
+  dataQuality: IDataQuality;
+  confidenceScore: number; // e.g. 85 for 85%
+}
+
+export interface IBusinessIntelligence {
+  competitivePosition: string;
+  marketSaturation: string;
+  reviewGap: number;
+  visibilityGap: string;
+  growthPotential: string;
 }
 
 export interface IAuditData {
-  executiveSummary: string;
-  overallScore: number;
   googleSearchRank: IGoogleSearchRank;
   profileScore: IProfileScore;
+  competitors: ICompetitor[];
+  keywordGapAnalysis: IKeywordGap[];
   seoScore: ISeoScore;
   reviewAnalysis: IReviewAnalysis;
   profileCompletion: IProfileCompletion;
-  topKeywords: IKeywordRank[];
-  competitors: ICompetitor[];
-  strengths: string[];
-  weaknesses: string[];
+  
+  strengths: IStrengthWeakness[];
+  weaknesses: IStrengthWeakness[];
   quickWins: string[];
-  priorityFixes: string[];
-  thirtyDayPlan: string[];
-  ninetyDayPlan: string[];
-  growthOpportunities: string[];
+  priorityFixes: IPriorityFix[];
+  thirtyDayPlan: IThirtyDayPlan[];
+  ninetyDayPlan: INinetyDayPlan[];
+  
   businessTier: string;
+  evidence?: Record<string, string>;
+  
+  auditConfidence?: IAuditConfidence;
+  businessIntelligence?: IBusinessIntelligence;
 }
 
 export interface IAudit extends Document {
@@ -83,78 +166,13 @@ export interface IAudit extends Document {
   
   location: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  auditVersion: 'V5' | 'V6' | 'V7';
   overallScore?: number;
   auditData?: IAuditData;
   metadata?: any;
   createdAt: Date;
   updatedAt: Date;
 }
-
-const GoogleSearchRankSchema = new Schema<IGoogleSearchRank>({
-  score: { type: Number, default: 0 },
-  status: { type: String, default: "" }
-});
-
-const ProfileScoreSchema = new Schema<IProfileScore>({
-  score: { type: Number, default: 0 },
-  reason: { type: String, default: "" }
-});
-
-const SeoScoreSchema = new Schema<ISeoScore>({
-  score: { type: Number, default: 0 },
-  issues: { type: [String], default: [] },
-  recommendations: { type: [String], default: [] }
-});
-
-const ReviewAnalysisSchema = new Schema<IReviewAnalysis>({
-  score: { type: Number, default: 0 },
-  reviewFrequency: { type: String, default: "" },
-  responseRate: { type: String, default: "" },
-  sentiment: { type: String, default: "" },
-  strengths: { type: [String], default: [] },
-  weaknesses: { type: [String], default: [] }
-});
-
-const ProfileCompletionSchema = new Schema<IProfileCompletion>({
-  score: { type: Number, default: 0 },
-  completedItems: { type: [String], default: [] },
-  missingItems: { type: [String], default: [] }
-});
-
-const KeywordRankSchema = new Schema<IKeywordRank>({
-  keyword: { type: String, default: "" },
-  rank: { type: String, default: "" }
-});
-
-const CompetitorSchema = new Schema<ICompetitor>({
-  name: { type: String, default: "" },
-  reviewCount: { type: Number, default: 0 },
-  rating: { type: Number, default: 0 },
-  category: { type: String, default: "" },
-  distance: { type: String, default: "" },
-  reason: { type: String, default: "" },
-  strengthLevel: { type: String, default: "" }
-});
-
-const AuditDataSchema = new Schema<IAuditData>({
-  executiveSummary: { type: String, default: "" },
-  overallScore: { type: Number, default: 0 },
-  googleSearchRank: { type: GoogleSearchRankSchema, default: () => ({}) },
-  profileScore: { type: ProfileScoreSchema, default: () => ({}) },
-  seoScore: { type: SeoScoreSchema, default: () => ({}) },
-  reviewAnalysis: { type: ReviewAnalysisSchema, default: () => ({}) },
-  profileCompletion: { type: ProfileCompletionSchema, default: () => ({}) },
-  topKeywords: { type: [KeywordRankSchema], default: [] },
-  competitors: { type: [CompetitorSchema], default: [] },
-  strengths: { type: [String], default: [] },
-  weaknesses: { type: [String], default: [] },
-  quickWins: { type: [String], default: [] },
-  priorityFixes: { type: [String], default: [] },
-  thirtyDayPlan: { type: [String], default: [] },
-  ninetyDayPlan: { type: [String], default: [] },
-  growthOpportunities: { type: [String], default: [] },
-  businessTier: { type: String, default: "Unknown" }
-});
 
 const AuditSchema = new Schema<IAudit>(
   {
@@ -178,8 +196,9 @@ const AuditSchema = new Schema<IAudit>(
       enum: ['PENDING', 'COMPLETED', 'FAILED'],
       default: 'PENDING',
     },
+    auditVersion: { type: String, enum: ['V5', 'V6', 'V7'], default: 'V7' },
     overallScore: { type: Number },
-    auditData: { type: AuditDataSchema },
+    auditData: { type: Schema.Types.Mixed }, // Using Mixed for the root data object since it's large and varies heavily
     metadata: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
