@@ -6,20 +6,36 @@ import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('demo@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('abcd@gmail.com');
+  const [password, setPassword] = useState('abcd1234');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     
-    // DEV MODE BYPASS
-    setTimeout(() => {
-      router.push('/dashboard');
-      router.refresh();
-    }, 500);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        setError(data.error || 'Invalid credentials');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('An error occurred during login');
+      setLoading(false);
+    }
   };
 
   return (

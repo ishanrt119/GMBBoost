@@ -11,10 +11,6 @@ export async function requireSuperAdmin(): Promise<
   | { ok: false; response: NextResponse }
 > {
   try {
-    if (IS_DEV) {
-      return { ok: true, userId: DEV_CONTEXT.userId, user: { role: 'SUPER_ADMIN' } };
-    }
-
     await dbConnect();
     const cookieStore = await cookies();
     const userId = cookieStore.get('superAdminUserId')?.value;
@@ -58,10 +54,6 @@ export async function requireClient(): Promise<
   | { ok: false; response: NextResponse }
 > {
   try {
-    if (IS_DEV) {
-      return { ok: true, userId: DEV_CONTEXT.userId, user: { role: 'CLIENT', organizationId: DEV_CONTEXT.organizationId } };
-    }
-
     await dbConnect();
     const cookieStore = await cookies();
     const userId = cookieStore.get('userId')?.value || cookieStore.get('superAdminUserId')?.value;

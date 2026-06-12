@@ -112,6 +112,24 @@ export default function AuditDebugPanel({ auditData }: { auditData: any }) {
                     </div>
 
                     <h3 className="font-bold text-slate-700 uppercase text-xs tracking-wider pt-4">
+                      Competitor Discovery Engine
+                    </h3>
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 font-mono text-sm overflow-x-auto">
+                      <pre className="text-slate-700">
+                        {JSON.stringify({
+                          businessName: auditData.metadata?.debug?.businessName,
+                          category: auditData.metadata?.debug?.category,
+                          area: auditData.metadata?.debug?.area,
+                          city: auditData.metadata?.debug?.city,
+                          reviewCount: auditData.metadata?.debug?.reviewCount,
+                          tier: auditData.metadata?.debug?.tier,
+                          competitorsFound: auditData.metadata?.debug?.competitorsFound?.map((c: any) => c.name) || [],
+                          competitorsRejected: auditData.metadata?.debug?.competitorsRejected?.map((r: any) => ({ name: r.competitor?.name, reason: r.reason })) || [],
+                        }, null, 2)}
+                      </pre>
+                    </div>
+
+                    <h3 className="font-bold text-slate-700 uppercase text-xs tracking-wider pt-4">
                       AI Generated Output
                     </h3>
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 font-mono text-sm overflow-x-auto">

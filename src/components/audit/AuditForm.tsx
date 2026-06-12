@@ -15,9 +15,8 @@ export default function AuditForm() {
   const getMissingFields = () => {
     if (!activeBusiness) return ['Business Selection'];
     const missing = [];
-    if (!activeBusiness.userDefinedCategory) missing.push('Business Category');
-    if (!activeBusiness.googlePlaceId) missing.push('Google Place ID');
-    if (!activeBusiness.location?.coordinates || activeBusiness.location.coordinates.length < 2) missing.push('Map Coordinates');
+    if (activeBusiness._id === '60b9b3b3b3b3b3b3b3b3b3b3') missing.push('Real Business Profile (Currently using Fallback)');
+    if (!activeBusiness.userDefinedCategory && !activeBusiness.category) missing.push('Business Category');
     return missing;
   };
 
@@ -151,15 +150,7 @@ export default function AuditForm() {
                 </div>
               </div>
 
-              {/* Field 7: Google Place ID (Full Width) */}
-              <div className="space-y-1.5 md:col-span-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5" /> Google Place ID
-                </label>
-                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-slate-500 font-mono text-sm truncate">
-                  {activeBusiness.googlePlaceId || 'N/A'}
-                </div>
-              </div>
+
             </div>
             
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 text-center">

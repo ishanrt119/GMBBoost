@@ -8,24 +8,19 @@ export async function POST(req: Request) {
   try {
     const { businessId } = await req.json();
 
-    if (!businessId) {
-       // Just for the demo, grab the first business if not provided
-       const dbConnect = (await import('@/lib/mongodb')).default;
-       const Business = (await import('@/models/Business')).default;
-       await dbConnect();
-       const demoBusiness = await Business.findOne();
-       if (!demoBusiness) return NextResponse.json({ error: 'No business found to generate for' }, { status: 400 });
-       
-       await inngest.send({
-         name: 'scheduler/manual-generate',
-         data: { businessId: demoBusiness._id.toString(), force: true }
-       });
-    } else {
-       await inngest.send({
-         name: 'scheduler/manual-generate',
-         data: { businessId, force: true }
-       });
+    let finalBusinessId = businessId;
+
+    if (!finalBusinessId) {
+       const { getActiveBusinessContext } = await import('@/lib/business-context');
+       const context = await getActiveBusinessContext();
+       if (!context.ok) return NextResponse.json({ error: 'No active business context found' }, { status: 400 });
+       finalBusinessId = context.business._id.toString();
     }
+
+    await inngest.send({
+      name: 'scheduler/manual-generate',
+      data: { businessId: finalBusinessId, force: true }
+    });
 
     return NextResponse.json({ success: true, message: 'Generation job dispatched successfully.' }, { status: 200 });
   } catch (error: any) {

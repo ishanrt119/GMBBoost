@@ -1,55 +1,19 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { IAudit, IRealMetrics } from '@/models/Audit';
-import { Share2, FileText, Download, Sparkles, Building2, Globe, Phone, MapPin, Zap, RefreshCcw, CheckCircle2, TrendingUp, Search, MessageSquare, AlertCircle, Calendar, Target, ShieldAlert, Award, Loader2 } from 'lucide-react';
+import { IAudit } from '@/models/Audit';
+import { Download, Sparkles, Building2, Globe, MapPin, Zap, TrendingUp, Search, MessageSquare, AlertCircle, Calendar, Target, ShieldAlert, Award, Loader2, CheckCircle2 } from 'lucide-react';
 import AuditDebugPanel from './AuditDebugPanel';
-
-/* ─── Screen helpers ──────────────────────────────────────── */
-
-function CircleProgress({
-  percent, size = 100, strokeWidth = 9, color, label,
-}: {
-  percent: number; size?: number; strokeWidth?: number; color?: string; label?: string;
-}) {
-  const r = (size - strokeWidth) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (Math.min(100, Math.max(0, percent)) / 100) * circ;
-  const fill = color ?? (percent >= 80 ? '#22c55e' : percent >= 50 ? '#f59e0b' : '#ef4444');
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={fill}
-          strokeWidth={strokeWidth} strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={offset} />
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: size * 0.22, fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>
-          {label ?? `${percent}%`}
-        </span>
-      </div>
-    </div>
-  );
-};
 
 /* ─── PDF HTML builder ────────────────────────────────────── */
 
 function buildPdfHtml(audit: IAudit): string {
-  const { auditData, competitors = [], realMetrics } = audit;
-  const rm = realMetrics as IRealMetrics | undefined;
-
-  const data = auditData || {} as any;
-  const bHealth = data.businessHealthScore ?? 0;
-  const sScore = data.seoScore ?? 0;
-  const pScore = data.profileScore ?? 0;
-  const rScore = data.reviewScore ?? 0;
-  const vScore = data.searchVisibilityScore ?? 0;
-
-  const kwRows = rm?.keywordRankings?.filter(k => k.rank > 0) ?? [];
-  const stars = rm?.businessRating && rm.businessRating > 0
-    ? ('★'.repeat(Math.round(rm.businessRating)) + '☆'.repeat(Math.max(0, 5 - Math.round(rm.businessRating))))
-    : '★★★★☆';
+  const data = audit.auditData || {} as any;
+  const overallScore = data.overallScore ?? 0;
+  const searchRankScore = data.googleSearchRank?.score ?? 0;
+  const profileScore = data.profileScore?.score ?? 0;
+  const seoScore = data.seoScore?.score ?? 0;
+  const reviewScore = data.reviewAnalysis?.score ?? 0;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -85,7 +49,6 @@ function buildPdfHtml(audit: IAudit): string {
       <p style="margin:0;font-size:11px;color:#64748b;font-weight:600;">Google Business Profile Audit</p>
       <h1 style="margin:4px 0 0;font-size:22px;font-weight:900;color:#1e293b;">${audit.businessName}</h1>
       <p style="margin:5px 0 0;font-size:12px;color:#64748b;">
-        <span style="color:#f59e0b;">${stars}</span>
         ${audit.location}
       </p>
     </div>
@@ -95,16 +58,16 @@ function buildPdfHtml(audit: IAudit): string {
   <!-- Scores -->
   <div class="grid3" style="margin-bottom:16px;">
     <div class="card" style="text-align:center;">
-      <p style="margin:0 0 5px;font-size:12px;font-weight:700;">Health Score</p>
-      <h2 style="margin:0;font-size:32px;color:#2563eb;">${bHealth}/100</h2>
+      <p style="margin:0 0 5px;font-size:12px;font-weight:700;">Overall Score</p>
+      <h2 style="margin:0;font-size:32px;color:#2563eb;">${overallScore}/100</h2>
     </div>
     <div class="card" style="text-align:center;">
       <p style="margin:0 0 5px;font-size:12px;font-weight:700;">SEO Score</p>
-      <h2 style="margin:0;font-size:32px;color:#22c55e;">${sScore}/100</h2>
+      <h2 style="margin:0;font-size:32px;color:#22c55e;">${seoScore}/100</h2>
     </div>
     <div class="card" style="text-align:center;">
-      <p style="margin:0 0 5px;font-size:12px;font-weight:700;">Visibility Score</p>
-      <h2 style="margin:0;font-size:32px;color:#7c3aed;">${vScore}/100</h2>
+      <p style="margin:0 0 5px;font-size:12px;font-weight:700;">Profile Score</p>
+      <h2 style="margin:0;font-size:32px;color:#7c3aed;">${profileScore}/100</h2>
     </div>
   </div>
 
@@ -124,46 +87,36 @@ function buildPdfHtml(audit: IAudit): string {
     </div>
   </div>
 
-  <div class="section-title"><span>Competitor Analysis</span><hr/></div>
-  <div class="card" style="margin-bottom:16px; font-size:12px; line-height:1.6; color:#334155;">
-    ${data.competitorAnalysis || 'No competitor analysis available.'}
-  </div>
-
 </div>
 
 <div class="page">
   <div class="section-title"><span>Growth & Opportunities</span><hr/></div>
   
   <div class="card" style="margin-bottom:16px;">
-    <p style="margin:0 0 8px;font-weight:700;color:#2563eb;">Keyword Opportunities</p>
-    <ul>${(data.keywordOpportunities || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
+    <p style="margin:0 0 8px;font-weight:700;color:#2563eb;">Quick Wins</p>
+    <ul>${(data.quickWins || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
   </div>
 
   <div class="card" style="margin-bottom:16px;">
-    <p style="margin:0 0 8px;font-weight:700;color:#f59e0b;">Review Opportunities</p>
-    <ul>${(data.reviewOpportunities || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
-  </div>
-
-  <div class="card" style="margin-bottom:16px;">
-    <p style="margin:0 0 8px;font-weight:700;color:#7c3aed;">Growth Opportunities</p>
+    <p style="margin:0 0 8px;font-weight:700;color:#f59e0b;">Growth Opportunities</p>
     <ul>${(data.growthOpportunities || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
   </div>
 
   <div class="section-title"><span>Action Plan</span><hr/></div>
   
   <div class="card" style="margin-bottom:16px; border-left:4px solid #ef4444;">
-    <p style="margin:0 0 8px;font-weight:700;color:#ef4444;">Priority Recommendations (Fix immediately)</p>
-    <ul>${(data.priorityRecommendations || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
+    <p style="margin:0 0 8px;font-weight:700;color:#ef4444;">Priority Fixes (Fix immediately)</p>
+    <ul>${(data.priorityFixes || []).map((s: string) => `<li>${s}</li>`).join('')}</ul>
   </div>
 
   <div class="grid2">
     <div class="card">
       <p style="margin:0 0 8px;font-weight:700;color:#1e293b;">30-Day Action Plan</p>
-      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.actionPlan30Day || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ol>
+      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.thirtyDayPlan || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ol>
     </div>
     <div class="card">
       <p style="margin:0 0 8px;font-weight:700;color:#1e293b;">90-Day Roadmap</p>
-      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.roadmap90Day || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ol>
+      <ol style="padding-left:20px; margin:0; font-size:12px;">${(data.ninetyDayPlan || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ol>
     </div>
   </div>
 
@@ -229,24 +182,22 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
       <div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Analyzing your Business Profile…</h2>
         <p className="text-slate-500">
-          Fetching real Google data, competitors and keyword rankings.<br />
+          Fetching local data and analyzing with AI.<br />
           <small className="text-slate-400">This usually takes 15–30 seconds.</small>
         </p>
       </div>
     </div>
   );
 
-  const { auditData, competitors = [], realMetrics } = audit;
-  const rm = realMetrics as IRealMetrics | undefined;
+  const data = audit.auditData || {} as any;
+  const overallScore = data.overallScore ?? 0;
+  const searchRankScore = data.googleSearchRank?.score ?? 0;
+  const profileScore = data.profileScore?.score ?? 0;
+  const seoScore = data.seoScore?.score ?? 0;
+  const reviewScore = data.reviewAnalysis?.score ?? 0;
 
-  const data = auditData || {} as any;
-  const bHealth = data.businessHealthScore ?? 0;
-  const sScore = data.seoScore ?? 0;
-  const pScore = data.profileScore ?? 0;
-  const rScore = data.reviewScore ?? 0;
-  const vScore = data.searchVisibilityScore ?? 0;
-
-  const kwRows = rm?.keywordRankings?.filter(k => k.rank > 0) ?? [];
+  const competitors = data.competitors || [];
+  const topKeywords = data.topKeywords || [];
 
   return (
     <>
@@ -272,23 +223,13 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
           </button>
         </div>
 
-        {/* Data Origin Notice */}
-        {rm && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-8 text-sm text-emerald-800 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            <p>
-              Report data sourced directly from <strong>Google Places API</strong> (real business metrics) and <strong>SERPAPI</strong> (live keyword rankings). Competitors are real nearby businesses mapped to your specific category.
-            </p>
-          </div>
-        )}
-
         {/* Top Level Scores */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <ScoreCard title="Health Score" score={bHealth} icon={<Award className="w-5 h-5 text-blue-500" />} />
-          <ScoreCard title="SEO Score" score={sScore} icon={<Search className="w-5 h-5 text-green-500" />} />
-          <ScoreCard title="Profile Score" score={pScore} icon={<Building2 className="w-5 h-5 text-purple-500" />} />
-          <ScoreCard title="Review Score" score={rScore} icon={<MessageSquare className="w-5 h-5 text-amber-500" />} />
-          <ScoreCard title="Visibility Score" score={vScore} icon={<TrendingUp className="w-5 h-5 text-rose-500" />} />
+          <ScoreCard title="Overall Score" score={overallScore} icon={<Award className="w-5 h-5 text-blue-500" />} />
+          <ScoreCard title="Search Rank" score={searchRankScore} icon={<Search className="w-5 h-5 text-green-500" />} />
+          <ScoreCard title="Profile Score" score={profileScore} icon={<Building2 className="w-5 h-5 text-purple-500" />} />
+          <ScoreCard title="SEO Score" score={seoScore} icon={<TrendingUp className="w-5 h-5 text-rose-500" />} />
+          <ScoreCard title="Review Score" score={reviewScore} icon={<MessageSquare className="w-5 h-5 text-amber-500" />} />
         </div>
 
         {/* Executive Summary */}
@@ -345,30 +286,59 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
             <Target className="w-5 h-5 text-slate-600" /> Competitor Analysis
           </h2>
 
-          <div className="mb-8">
-            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">AI Insights</h3>
-            {data.competitorAnalysis ? (
-              <p className="text-slate-600 leading-relaxed">{data.competitorAnalysis}</p>
-            ) : <DataUnavailable />}
-          </div>
-
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Real Competitors (Google Maps)</h3>
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">AI Competitors Mapping</h3>
           {competitors.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="py-3 px-4 text-xs font-semibold text-slate-500">Business Name</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500">Location</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-right">Rating</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500">Category</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">Rating</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">Reviews</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">Distance</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500">Reason</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-right">Strength</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {competitors.map((c, i) => (
+                  {competitors.map((c: any, i: number) => (
                     <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-3 px-4 text-sm font-medium text-slate-900">{c.name}</td>
-                      <td className="py-3 px-4 text-xs text-slate-500">{c.address || '—'}</td>
-                      <td className="py-3 px-4 text-sm font-bold text-amber-500 text-right">{c.rating > 0 ? `${c.rating} ★` : '—'}</td>
+                      <td className="py-3 px-4 text-xs text-slate-500">{c.category || '—'}</td>
+                      <td className="py-3 px-4 text-sm font-bold text-slate-700 text-center">{c.rating || '—'}</td>
+                      <td className="py-3 px-4 text-sm text-slate-600 text-center">{c.reviewCount || '—'}</td>
+                      <td className="py-3 px-4 text-xs text-slate-500 text-center">{c.distance || '—'}</td>
+                      <td className="py-3 px-4 text-xs text-slate-500">{c.reason || '—'}</td>
+                      <td className="py-3 px-4 text-sm font-bold text-amber-500 text-right">{c.strengthLevel || c.estimatedStrength || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <DataUnavailable />}
+        </div>
+        
+        {/* Keywords Analysis */}
+        <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm mb-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <Search className="w-5 h-5 text-slate-600" /> Top Keywords
+          </h2>
+
+          {topKeywords.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500">Keyword</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-slate-500">Estimated Rank</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topKeywords.map((k: any, i: number) => (
+                    <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 text-sm font-medium text-slate-900">{k.keyword}</td>
+                      <td className="py-3 px-4 text-xs text-slate-500">{k.rank || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -378,9 +348,8 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
         </div>
 
         {/* Opportunities Matrix */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <OpportunityCard title="Keyword Opportunities" items={data.keywordOpportunities} icon={<Search className="w-5 h-5 text-blue-500" />} />
-          <OpportunityCard title="Review Opportunities" items={data.reviewOpportunities} icon={<MessageSquare className="w-5 h-5 text-amber-500" />} />
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <OpportunityCard title="Quick Wins" items={data.quickWins} icon={<Zap className="w-5 h-5 text-amber-500" />} />
           <OpportunityCard title="Growth Opportunities" items={data.growthOpportunities} icon={<TrendingUp className="w-5 h-5 text-purple-500" />} />
         </div>
 
@@ -392,12 +361,12 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
 
           <div className="relative z-10">
             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-              <ShieldAlert className="w-6 h-6 text-rose-400" /> Priority Recommendations
+              <ShieldAlert className="w-6 h-6 text-rose-400" /> Priority Fixes
             </h2>
 
-            {data.priorityRecommendations && data.priorityRecommendations.length > 0 ? (
+            {data.priorityFixes && data.priorityFixes.length > 0 ? (
               <div className="grid gap-4 mb-10">
-                {data.priorityRecommendations.map((r: string, i: number) => (
+                {data.priorityFixes.map((r: string, i: number) => (
                   <div key={i} className="bg-white/10 border border-white/20 rounded-xl p-5 flex items-start gap-4">
                     <div className="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold shrink-0">{i + 1}</div>
                     <p className="text-slate-200 mt-1">{r}</p>
@@ -411,9 +380,9 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-blue-400">
                   <Calendar className="w-5 h-5" /> 30-Day Action Plan
                 </h3>
-                {data.actionPlan30Day && data.actionPlan30Day.length > 0 ? (
+                {data.thirtyDayPlan && data.thirtyDayPlan.length > 0 ? (
                   <ul className="space-y-4">
-                    {data.actionPlan30Day.map((item: string, i: number) => (
+                    {data.thirtyDayPlan.map((item: string, i: number) => (
                       <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
                         <span>{item}</span>
@@ -427,9 +396,9 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-purple-400">
                   <Globe className="w-5 h-5" /> 90-Day Roadmap
                 </h3>
-                {data.roadmap90Day && data.roadmap90Day.length > 0 ? (
+                {data.ninetyDayPlan && data.ninetyDayPlan.length > 0 ? (
                   <ul className="space-y-4">
-                    {data.roadmap90Day.map((item: string, i: number) => (
+                    {data.ninetyDayPlan.map((item: string, i: number) => (
                       <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
                         <span>{item}</span>

@@ -43,33 +43,22 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBusinesses = async () => {
     try {
-      const res = await fetch('/api/business/active');
+      const res = await fetch('/api/business/all');
       const json = await res.json();
-      if (json.success && json.data) {
-        setBusinesses([json.data]);
-        setActiveBusiness(json.data);
+      if (json.success && json.businesses && json.businesses.length > 0) {
+        setBusinesses(json.businesses);
+        const activeId = json.activeBusinessId || json.businesses[0]._id;
+        const active = json.businesses.find((b: any) => b._id === activeId) || json.businesses[0];
+        setActiveBusiness(active);
       } else {
-        // Fallback to dummy data if no cookie exists (user hasn't onboarded yet)
-        const fallback = {
-          _id: DEV_CONTEXT.businessId,
-          name: "Acme Development (Fallback)",
-          organizationId: DEV_CONTEXT.organizationId,
-          googleConnected: false,
-        };
-        setBusinesses([fallback]);
-        setActiveBusiness(fallback);
+        // No businesses found
+        setBusinesses([]);
+        setActiveBusiness(null);
       }
     } catch (err) {
       console.error("Failed to load business context", err);
-      // Fallback on network error
-      const fallback = {
-        _id: DEV_CONTEXT.businessId,
-        name: "Acme Development (Fallback)",
-        organizationId: DEV_CONTEXT.organizationId,
-        googleConnected: false,
-      };
-      setBusinesses([fallback]);
-      setActiveBusiness(fallback);
+      setBusinesses([]);
+      setActiveBusiness(null);
     } finally {
       setLoading(false);
     }
@@ -80,10 +69,21 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const switchBusiness = async (businessId: string) => {
-    const selected = businesses.find(b => b._id === businessId);
-    if (selected) {
-      setActiveBusiness(selected);
-      router.refresh();
+    try {
+      const res = await fetch('/api/business/all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId }),
+      });
+      if (res.ok) {
+        const selected = businesses.find(b => b._id === businessId);
+        if (selected) {
+          setActiveBusiness(selected);
+          router.refresh(); // Refresh the page to reload SSR components with new cookie
+        }
+      }
+    } catch (err) {
+      console.error('Failed to switch business', err);
     }
   };
 

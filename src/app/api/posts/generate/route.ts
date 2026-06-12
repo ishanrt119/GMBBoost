@@ -12,7 +12,10 @@ export async function POST(req: Request) {
     if (body.businessId) {
       businessProfile = await Business.findById(body.businessId);
     } else {
-      businessProfile = await Business.findOne(); // Fallback for demo
+      const { getActiveBusinessContext } = await import('@/lib/business-context');
+      const context = await getActiveBusinessContext();
+      if (!context.ok) return NextResponse.json({ message: 'No active business context found' }, { status: 400 });
+      businessProfile = context.business;
     }
 
     if (!businessProfile) {

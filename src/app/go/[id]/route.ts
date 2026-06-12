@@ -15,15 +15,18 @@ export async function GET(
     // Note: Assuming `id` passed is `customerId` for this mock logic
     const reviewReq = await ReviewRequest.findOne({ customerId: id }).sort({ createdAt: -1 });
     
+    let business;
+    if (reviewReq && reviewReq.businessId) {
+      business = await Business.findById(reviewReq.businessId);
+    }
+    
     if (reviewReq && reviewReq.status !== 'REVIEWED') {
       reviewReq.status = 'CLICKED';
       reviewReq.clickedAt = new Date();
       await reviewReq.save();
     }
 
-    // Default redirect to Google Maps (could be dynamic based on Business DB)
-    const business = await Business.findOne();
-    const reviewUrl = business?.website || 'https://search.google.com/local/writereview?placeid=mock-place-id';
+    const reviewUrl = business?.googleMapsUrl || business?.website || 'https://search.google.com/local/writereview?placeid=mock-place-id';
     
     return NextResponse.redirect(reviewUrl);
   } catch (error) {

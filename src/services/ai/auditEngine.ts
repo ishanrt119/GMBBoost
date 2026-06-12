@@ -1,117 +1,146 @@
-/**
- * auditEngine.ts
- *
- * Uses Groq LLM ONLY for qualitative analysis and recommendations.
- * Competitors and rankings come from real APIs (Google Places / SERPAPI).
- * The LLM is explicitly told NOT to invent competitor data.
- */
 import Groq from 'groq-sdk';
-import { GMBBusinessData } from '../gmb/provider';
-import { IAuditData, ICompetitor, IKeywordRanking } from '../../models/Audit';
+import { IAuditData } from '../../models/Audit';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-export interface AIAuditResult extends IAuditData {
-  servicesCount: number;
-  categoriesCount: number;
-  competitors: ICompetitor[];
-}
-
 export async function generateAIAudit(
-  businessData: GMBBusinessData,
-  realCompetitors: ICompetitor[],     
-  realKeywordRankings: IKeywordRanking[], 
-  targetCategory: string              
-): Promise<AIAuditResult> {
+  businessData: any
+): Promise<IAuditData | string> {
 
   const prompt = `
-You are an expert local SEO and Google Business Profile consultant.
-Analyze the following REAL business profile data and return STRICT JSON matching the schema below.
+You are an elite Google Business Profile consultant,
+Local SEO expert,
+Reputation management specialist,
+and Growth strategist.
 
-BUSINESS DATA:
-${JSON.stringify({
-  name:           businessData.businessName,
-  location:       businessData.location,
-  rating:         businessData.rating,
-  reviewsCount:   businessData.reviewsCount,
-  categories:     businessData.categories,
-  primaryCategory: targetCategory,
-  photosCount:    businessData.photosCount,
-  businessHours:  businessData.businessHours,
-  hasWebsite:     businessData.hasWebsite,
-  hasPhone:       businessData.hasPhone,
-  hasDescription: businessData.hasDescription,
-  description:    businessData.description,
-  reviews:        businessData.reviews.slice(0, 5),
-}, null, 2)}
+Analyze the following business.
 
-REAL COMPETITORS (from SERP / Maps):
-${JSON.stringify(realCompetitors, null, 2)}
+BUSINESS NAME:
+${businessData.businessName}
 
-REAL KEYWORD RANKINGS (from SERPAPI):
-${JSON.stringify(realKeywordRankings, null, 2)}
+CATEGORY:
+${businessData.category}
 
-REQUIRED JSON OUTPUT SCHEMA:
+TIER:
+${businessData.tier || 'Unknown'}
+
+LOCATION:
+${businessData.area || ''}, ${businessData.city || ''}, ${businessData.state || ''}
+
+WEBSITE:
+${businessData.website || 'N/A'}
+
+DESCRIPTION:
+${businessData.description || 'N/A'}
+
+RATING:
+${businessData.rating || 0}
+
+TOTAL REVIEWS:
+${businessData.reviewCount || 0}
+
+REVIEWS:
+${JSON.stringify(businessData.reviews || [])}
+
+SUPPLIED COMPETITORS:
+${businessData.competitors && businessData.competitors.length > 0 ? JSON.stringify(businessData.competitors) : 'No suitable competitors found.'}
+
+Generate a complete GBP audit report.
+
+Return STRICT JSON matching the schema below.
+
+REQUIRED JSON FORMAT:
 {
-  "executiveSummary": "string (2-3 paragraphs summarizing their digital presence)",
-  "businessHealthScore": number (0-100, overall health),
-  "seoScore": number (0-100, based on keyword rankings),
-  "profileScore": number (0-100, based on completeness),
-  "reviewScore": number (0-100, based on rating and count),
-  "searchVisibilityScore": number (0-100, compared to competitors),
-  "competitorAnalysis": "string (analysis of how they compare to the REAL competitors provided)",
-  "strengths": ["string", "string", "string"],
-  "weaknesses": ["string", "string", "string"],
-  "keywordOpportunities": ["string", "string", "string"],
-  "reviewOpportunities": ["string", "string", "string"],
-  "growthOpportunities": ["string", "string", "string"],
-  "actionPlan30Day": ["string", "string", "string", "string", "string"],
-  "roadmap90Day": ["string", "string", "string", "string", "string"],
-  "priorityRecommendations": ["string", "string", "string"],
-  "servicesCount": number (estimate how many services this business should have based on category),
-  "categoriesCount": number (estimate how many categories apply)
+  "executiveSummary": "",
+  "overallScore": 0,
+  "googleSearchRank": {
+    "score": 0,
+    "status": ""
+  },
+  "profileScore": {
+    "score": 0,
+    "reason": ""
+  },
+  "seoScore": {
+    "score": 0,
+    "issues": [],
+    "recommendations": []
+  },
+  "reviewAnalysis": {
+    "score": 0,
+    "reviewFrequency": "",
+    "responseRate": "",
+    "sentiment": "",
+    "strengths": [],
+    "weaknesses": []
+  },
+  "profileCompletion": {
+    "score": 0,
+    "completedItems": [],
+    "missingItems": []
+  },
+  "topKeywords": [
+    {
+      "keyword": "",
+      "rank": ""
+    }
+  ],
+  "competitors": [
+    {
+      "name": "",
+      "reviewCount": 0,
+      "rating": 0,
+      "category": "",
+      "distance": "",
+      "reason": "",
+      "strengthLevel": ""
+    }
+  ],
+  "strengths": [],
+  "weaknesses": [],
+  "quickWins": [],
+  "priorityFixes": [],
+  "thirtyDayPlan": [],
+  "ninetyDayPlan": [],
+  "growthOpportunities": []
 }
 
-IMPORTANT RULES:
-- Do NOT invent competitor names. Use ONLY the ones provided in the prompt.
-- Do NOT invent keyword ranks. Use ONLY the real ones provided.
-- If no competitors are provided, state that local data is sparse instead of making them up.
-- Respond ONLY with valid JSON.
+COMPETITOR ANALYSIS INSTRUCTIONS:
+You are given a list of validated competitors. 
+You MUST NOT generate new competitors. 
+You MUST ONLY analyze competitors supplied in input under "SUPPLIED COMPETITORS".
+If the competitor list is empty ("No suitable competitors found."), return an empty array [] for "competitors".
+Do not invent any names.
+
+STRENGTHS & WEAKNESSES SECTION:
+Never return "Data Unavailable" for strengths. Always generate minimum 3 strengths and minimum 3 weaknesses from Reviews, Ratings, Profile Completion, Website, Services, Description, and Category.
+Even if competitor data fails or is empty, ALWAYS return minimum 3 strengths and 3 weaknesses based on the business's own metrics.
+
+FAIL SAFE:
+Never generate fake competitors, fake rankings, fake coordinates, or fake visibility grids.
+If you cannot confidently generate data for this business, return the exact string: "Data Unavailable" (do NOT return JSON if you are not confident).
 `;
 
   try {
     const response = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
       temperature: 0.1,
     });
 
     const content = response.choices[0].message?.content;
     if (!content) throw new Error('No content returned from Groq AI');
 
-    const parsed = JSON.parse(content);
+    if (content.trim() === 'Data Unavailable' || content.includes('Data Unavailable')) {
+      return "Data Unavailable";
+    }
 
-    return {
-      executiveSummary: parsed.executiveSummary || 'Audit analysis unavailable.',
-      businessHealthScore: parsed.businessHealthScore ?? 0,
-      seoScore: parsed.seoScore ?? 0,
-      profileScore: parsed.profileScore ?? 0,
-      reviewScore: parsed.reviewScore ?? 0,
-      searchVisibilityScore: parsed.searchVisibilityScore ?? 0,
-      competitorAnalysis: parsed.competitorAnalysis || 'Competitor data analysis unavailable.',
-      strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-      weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
-      keywordOpportunities: Array.isArray(parsed.keywordOpportunities) ? parsed.keywordOpportunities : [],
-      reviewOpportunities: Array.isArray(parsed.reviewOpportunities) ? parsed.reviewOpportunities : [],
-      growthOpportunities: Array.isArray(parsed.growthOpportunities) ? parsed.growthOpportunities : [],
-      actionPlan30Day: Array.isArray(parsed.actionPlan30Day) ? parsed.actionPlan30Day : [],
-      roadmap90Day: Array.isArray(parsed.roadmap90Day) ? parsed.roadmap90Day : [],
-      priorityRecommendations: Array.isArray(parsed.priorityRecommendations) ? parsed.priorityRecommendations : [],
-      servicesCount: parsed.servicesCount ?? 0,
-      categoriesCount: parsed.categoriesCount ?? 0,
-      competitors: realCompetitors
-    };
+    // Try to extract JSON if it was wrapped in markdown
+    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+    const jsonStr = jsonMatch ? jsonMatch[1] : content;
+
+    const parsed = JSON.parse(jsonStr);
+    return parsed as IAuditData;
   } catch (error: any) {
     console.error('Error generating AI audit:', error);
     throw new Error(`Failed to generate AI audit: ${error.message || error}`);

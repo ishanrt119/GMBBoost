@@ -43,16 +43,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized to access this business' }, { status: 403 });
     }
 
-    if (!business.userDefinedCategory) {
+    if (!business.userDefinedCategory && !business.category) {
       return NextResponse.json({ error: 'Business Category is missing. Please update your business profile.' }, { status: 400 });
-    }
-
-    if (!business.googlePlaceId) {
-      return NextResponse.json({ error: 'Google Place ID is missing. Please connect your Google Business Profile.' }, { status: 400 });
-    }
-    
-    if (!business.location?.coordinates || business.location.coordinates.length < 2) {
-      return NextResponse.json({ error: 'Business location coordinates are missing. Please update your business address.' }, { status: 400 });
     }
 
     // Check feature gating limits (Temporarily Bypassed per request)
@@ -77,24 +69,17 @@ export async function POST(req: Request) {
       businessId: business._id,
       businessName: business.name,
       userDefinedCategory: business.userDefinedCategory,
-      googlePlaceId: business.googlePlaceId,
       website: business.website,
       phone: business.phone,
       address: business.address,
       city: business.city,
       state: business.state,
       country: business.country,
-      latitude: business.location.coordinates[1],
-      longitude: business.location.coordinates[0],
-      googleBusinessProfile: `https://search.google.com/local/writereview?placeid=${business.googlePlaceId}`,
 
       location: finalLocation,
-      gbpUrl: `https://search.google.com/local/writereview?placeid=${business.googlePlaceId}`,
       status: 'PENDING',
       metadata: {
-        googlePlaceId: business.googlePlaceId,
         userDefinedCategory: business.userDefinedCategory,
-        coordinates: business.location.coordinates
       }
     });
 
