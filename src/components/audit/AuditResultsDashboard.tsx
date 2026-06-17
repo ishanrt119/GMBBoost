@@ -6,6 +6,7 @@ import { Download, Sparkles, Building2, Globe, MapPin, Zap, TrendingUp, Search, 
 import AuditDebugPanel from './AuditDebugPanel';
 import AuditReportV6 from './AuditReportV6';
 import AuditReportV7 from './AuditReportV7';
+import { auditToV5Adapter, auditToV6Adapter, auditToV7Adapter } from '@/utils/auditAdapters';
 
 /* ─── PDF HTML builder ────────────────────────────────────── */
 
@@ -149,6 +150,13 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
     return () => clearInterval(interval);
   }, [auditId]);
 
+  // Temporary debug mode
+  useEffect(() => {
+    if (audit) {
+      console.log('Canonical Audit', audit);
+    }
+  }, [audit]);
+
   function handleDownload() {
     if (!audit) return;
     setPrinting(true);
@@ -186,14 +194,33 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
     </div>
   );
 
-  const data = audit.auditData || {} as any;
 
-  if (audit.auditVersion === 'V6') {
-    // Lazy load the new V6 component to avoid blowing up the main bundle
-    // But since it's a small app, we can just import it at the top or dynamically
-    // Wait, let's just require/import it at the top. I'll add the import line as well!
+  if (audit.auditVersion?.startsWith('V6') || audit.auditVersion?.startsWith('V7')) {
+    let adaptedAudit = audit;
+    if (audit.auditVersion?.startsWith('V7')) {
+      adaptedAudit = auditToV7Adapter(audit);
+    } else if (audit.auditVersion?.startsWith('V6')) {
+      adaptedAudit = auditToV6Adapter(audit);
+    }
+    
+    // Debug logging
+    console.log('Adapted Audit', adaptedAudit);
+
+    return (
+      <>
+        <iframe ref={iframeRef} className="fixed w-0 h-0 border-0 top-0 left-0 opacity-0 pointer-events-none" title="pdf-frame" />
+        {audit.auditVersion?.startsWith('V7') ? (
+        <AuditReportV7 audit={adaptedAudit} onDownload={handleDownload} />
+      ) : audit.auditVersion?.startsWith('V6') ? (
+        <AuditReportV6 audit={adaptedAudit} onDownload={handleDownload} />
+      ) : (<AuditDebugPanel auditData={adaptedAudit} />)}
+      </>
+    );
   }
 
+  // Map legacy V5 components
+  const adaptedV5Audit = auditToV5Adapter(audit);
+  const data = adaptedV5Audit.auditData || {} as any;
   const overallScore = data.overallScore ?? 0;
   const searchRankScore = data.googleSearchRank?.score ?? 0;
   const profileScore = data.profileScore?.score ?? 0;
@@ -202,19 +229,6 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
 
   const competitors = data.competitors || [];
   const topKeywords = data.topKeywords || [];
-
-  if (audit.auditVersion === 'V6' || audit.auditVersion === 'V7') {
-    return (
-      <>
-        <iframe ref={iframeRef} className="fixed w-0 h-0 border-0 top-0 left-0 opacity-0 pointer-events-none" title="pdf-frame" />
-        {audit.auditVersion === 'V7' ? (
-        <AuditReportV7 audit={audit} onDownload={handleDownload} />
-      ) : audit.auditVersion === 'V6' ? (
-        <AuditReportV6 audit={audit} onDownload={handleDownload} />
-      ) : (<AuditDebugPanel auditData={audit} />)}
-      </>
-    );
-  }
 
   return (
     <>
@@ -271,10 +285,10 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
             </h3>
             {data.strengths && data.strengths.length > 0 ? (
               <ul className="space-y-3">
-                {data.strengths.map((s: string, i: number) => (
+                {data.strengths.map((s: any, i: number) => (
                   <li key={i} className="text-emerald-800 text-sm flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                    <span>{s}</span>
+                    <span>{typeof s === 'string' ? s : s.title}</span>
                   </li>
                 ))}
               </ul>
@@ -286,10 +300,10 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
             </h3>
             {data.weaknesses && data.weaknesses.length > 0 ? (
               <ul className="space-y-3">
-                {data.weaknesses.map((s: string, i: number) => (
+                {data.weaknesses.map((s: any, i: number) => (
                   <li key={i} className="text-rose-800 text-sm flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
-                    <span>{s}</span>
+                    <span>{typeof s === 'string' ? s : s.title}</span>
                   </li>
                 ))}
               </ul>
@@ -383,10 +397,10 @@ export default function AuditResultsDashboard({ auditId }: { auditId: string }) 
 
             {data.priorityFixes && data.priorityFixes.length > 0 ? (
               <div className="grid gap-4 mb-10">
-                {data.priorityFixes.map((r: string, i: number) => (
+                {data.priorityFixes.map((r: any, i: number) => (
                   <div key={i} className="bg-white/10 border border-white/20 rounded-xl p-5 flex items-start gap-4">
                     <div className="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold shrink-0">{i + 1}</div>
-                    <p className="text-slate-200 mt-1">{r}</p>
+                    <p className="text-slate-200 mt-1">{typeof r === 'string' ? r : r.title}</p>
                   </div>
                 ))}
               </div>

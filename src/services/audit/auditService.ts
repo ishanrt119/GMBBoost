@@ -28,6 +28,16 @@ export async function processAuditJob(auditId: string) {
       ownerReply: r.replyText,
     }));
 
+    const actualReviewCount = Math.max(business.reviewCount || 0, formattedReviews.length || 0);
+
+    // [DATA QUALITY] Sync Validation
+    console.log('[DATA QUALITY] Sync Validation:');
+    console.log(`- Business Name: ${business.name}`);
+    console.log(`- Stored Place ID: ${business.googlePlaceId || business.placeId || 'Missing'}`);
+    console.log(`- Google Review Count: ${business.reviewCount || 0}`);
+    console.log(`- Mongo Review Count: ${formattedReviews.length}`);
+    console.log(`- Connected Account Status: ${business.googleConnected}`);
+
     // ── Step 1: Construct business data for Native Analyzers ──
     const businessData = {
       businessName: business.name,
@@ -40,8 +50,8 @@ export async function processAuditJob(auditId: string) {
       phone: business.phone || '',
       description: business.description || '',
       googleMapsUrl: business.googleBusinessProfile || '',
-      rating: 0, 
-      reviewCount: formattedReviews.length,
+      rating: business.rating || 0, 
+      reviewCount: actualReviewCount,
       reviews: formattedReviews
     };
 
@@ -55,10 +65,12 @@ export async function processAuditJob(auditId: string) {
       calculateProfileCompletion, 
       calculateReviewMetrics, 
       fetchKeywordRankings,
-      calculateNativeSeoScore,
+      calculateSplitProfileScore,
       calculateAuditConfidence,
       generateNativePriorityFixes,
-      calculateBusinessIntelligence
+      calculateBusinessIntelligence,
+      generateNativeStrengthsWeaknesses,
+      generateNativeRoadmaps
     } = require('./seoAnalyzer');
 
     const profileCompletionPayload = calculateProfileCompletion(business);
@@ -71,13 +83,36 @@ export async function processAuditJob(auditId: string) {
     let rankingsEvidence = 'Fallback Data (No API Key)';
 
     if (process.env.SERPAPI_KEY) {
-      const rankData = await fetchKeywordRankings(business);
-      keywordRankings = rankData.results;
-      rankingsEvidence = rankData.evidenceSource;
-    } else {
+      try {
+        const rankData = await fetchKeywordRankings(business);
+        keywordRankings = rankData.results;
+        rankingsEvidence = rankData.evidenceSource;
+      } catch (err) {
+        console.error("SERP API Failed, falling back to generated keywords");
+      }
+    } 
+    
+    if (keywordRankings.length === 0) {
+      // 10 Keyword Fallback
+      const s1 = business.services?.[0] || 'Services';
+      const s2 = business.services?.[1] || 'Company';
+      const s3 = business.services?.[2] || 'Experts';
+      
+      const cat = businessData.category || 'Business';
+      const cit = businessData.city || 'Local Area';
+      const bname = businessData.businessName || 'Company';
+
       keywordRankings = [
-        { keyword: `${businessData.category} ${business.city}`, rank: 21 },
-        { keyword: `best ${businessData.category}`, rank: 21 }
+        { keyword: `${cat} in ${cit}`, rank: 21 },
+        { keyword: `${bname} ${cit}`, rank: 21 },
+        { keyword: `${s1} ${cit}`, rank: 21 },
+        { keyword: `${s2} ${cit}`, rank: 21 },
+        { keyword: `${s3} ${cit}`, rank: 21 },
+        { keyword: `Best ${cat} ${cit}`, rank: 21 },
+        { keyword: `Top ${cat} ${cit}`, rank: 21 },
+        { keyword: `${cat} near me`, rank: 21 },
+        { keyword: `Local ${cat} ${cit}`, rank: 21 },
+        { keyword: `${cat} company ${cit}`, rank: 21 }
       ];
     }
     
@@ -92,14 +127,70 @@ export async function processAuditJob(auditId: string) {
     const { findCompetitors, isEnterpriseBrand } = require('./competitorService');
     const { accepted, rejected, targetTier, evidenceSource: compEvidence } = await findCompetitors(businessData);
 
-    // V7 Native SEO, Intelligence, and Confidence logic
-    const nativeSeoScore = calculateNativeSeoScore(business, profileCompletion);
-    const auditConfidence = calculateAuditConfidence(profileCompletion.completionPercentage, accepted.length, formattedReviews.length, !!business.website);
-    const nativePriorityFixes = generateNativePriorityFixes(business, profileCompletion, formattedReviews.length, accepted);
-    const businessIntelligence = calculateBusinessIntelligence(business, accepted, formattedReviews.length);
+    const splitProfileScore = calculateSplitProfileScore(business, profileCompletion);
+    const auditConfidence = calculateAuditConfidence(profileCompletion.completionPercentage, accepted.length, actualReviewCount, !!business.website);
+    const nativePriorityFixes = generateNativePriorityFixes(business, profileCompletion, actualReviewCount, accepted);
+    const businessIntelligence = calculateBusinessIntelligence(business, accepted, actualReviewCount);
+    const { strengths, weaknesses } = generateNativeStrengthsWeaknesses(business, profileCompletion, actualReviewCount, accepted);
+    const { thirtyDayPlan, ninetyDayPlan } = generateNativeRoadmaps(nativePriorityFixes, business, actualReviewCount);
 
-    // Save debug info to audit
+    // [DATA QUALITY] Master Audit Generation Logging
+    const compAvg = accepted.length > 0 ? accepted.reduce((acc: number, c: any) => acc + c.reviewCount, 0) / accepted.length : 0;
+    console.log('[DATA QUALITY] Master Audit Generation:');
+    console.log(`- reviewCount: ${actualReviewCount}`);
+    console.log(`- averageRating: ${businessData.rating}`);
+    console.log(`- profileCompletion: ${profileCompletion.completionPercentage}`);
+    console.log(`- serviceCount: ${business.services?.length || 0}`);
+    console.log(`- descriptionLength: ${business.description?.length || 0}`);
+    console.log(`- competitorAverageReviews: ${Math.round(compAvg)}`);
+    console.log(`- generatedStrengths: ${strengths.map((s: any) => s.title).join(', ')}`);
+    console.log(`- generatedWeaknesses: ${weaknesses.map((w: any) => w.title).join(', ')}`);
+    console.log(`- priorityFixes: ${nativePriorityFixes.map((f: any) => `${f.title} (+${f.expectedScoreGain})`).join(', ')}`);
+
+    // Dynamic Quick Wins and Growth Opportunities
+    const quickWins = nativePriorityFixes.filter((f: any) => f.effort === 'Low').slice(0, 3).map((f: any) => f.title);
+    const growthOpportunities = weaknesses.map((w: any) => w.outcome || w.title);
+
+    // Weighted Overall Score calculation (Math Coalescing)
+    const ratingComponent = ((reviewMetrics.averageRating || businessData.rating || 0) / 5) * 70;
+    const reviewCompScore = Math.min(100, (Math.log10(actualReviewCount + 1) * 30) + ratingComponent);
+    const safeAvgRank = googleSearchRank.averageRank || 21;
+    const rankMapScore = Math.max(0, 100 - (safeAvgRank * 2));
+    const finalOverallScore = Math.min(100, Math.max(1, Math.round(
+      ((splitProfileScore.completionScore || 0) * 0.25) +
+      ((splitProfileScore.seoScore || 0) * 0.25) +
+      (reviewCompScore * 0.30) +
+      (rankMapScore * 0.20)
+    )));
+
+    // Score Pipeline Debug Logging
+    console.log(`[AUDIT ${auditId}] SCORE PIPELINE:`);
+    console.log(`- Profile Score: ${splitProfileScore.completionScore}`);
+    console.log(`- SEO Score: ${splitProfileScore.seoScore}`);
+    console.log(`- Review Score: ${reviewCompScore.toFixed(1)}`);
+    console.log(`- Search Rank Score: ${rankMapScore.toFixed(1)}`);
+    console.log(`- FINAL OVERALL SCORE: ${finalOverallScore}`);
+
+    // Audit Status Tiers
+    let auditStatus: 'COMPLETED' | 'PARTIAL' | 'INSUFFICIENT_DATA' = 'COMPLETED';
+    if (auditConfidence.confidenceScore < 40) {
+      auditStatus = 'INSUFFICIENT_DATA';
+    } else if (auditConfidence.confidenceScore < 75) {
+      auditStatus = 'PARTIAL';
+    }
+
+    // Snapshot versioning
     audit.metadata = audit.metadata || {};
+    audit.metadata.auditSnapshot = {
+      reviewCount: formattedReviews.length,
+      averageRating: reviewMetrics.averageRating,
+      profileScore: splitProfileScore.completionScore,
+      seoScore: splitProfileScore.seoScore,
+      rankScore: Math.round(rankMapScore),
+      competitorCount: accepted.length,
+      generatedAt: new Date().toISOString()
+    };
+    
     audit.metadata.debug = {
       businessName: businessData.businessName,
       category: businessData.category,
@@ -112,40 +203,52 @@ export async function processAuditJob(auditId: string) {
     };
     await audit.save();
 
-    const enrichedBusinessData = {
-      ...businessData,
-      tier: targetTier,
-      competitors: accepted,
-      nativeAnalytics: {
-        profileCompletion,
-        reviewMetrics,
-        googleSearchRank,
-        seoScore: nativeSeoScore,
-        auditConfidence,
-        priorityFixes: nativePriorityFixes,
-        businessIntelligence
+    let aiResult: any = {};
+
+    if (auditStatus !== 'INSUFFICIENT_DATA') {
+      const enrichedBusinessData = {
+        ...businessData,
+        tier: targetTier,
+        competitors: accepted,
+        nativeAnalytics: {
+          profileCompletion,
+          reviewMetrics,
+          googleSearchRank,
+          seoScore: { score: splitProfileScore.seoScore, missingKeywords: [], optimizationOpportunities: [] }, // Legacy compat
+          auditConfidence,
+          priorityFixes: nativePriorityFixes,
+          businessIntelligence
+        }
+      };
+
+      // ── Step 2: Full AI analysis ────────────────────────────
+      aiResult = await generateAIAudit(enrichedBusinessData);
+
+      if (aiResult === "Data Unavailable") {
+        throw new Error("Data Unavailable");
       }
-    };
-
-    // ── Step 2: Full AI analysis ────────────────────────────
-    const aiResult = await generateAIAudit(enrichedBusinessData);
-
-    if (aiResult === "Data Unavailable") {
-      throw new Error("Data Unavailable");
     }
 
     // ── Step 3: Merge AI Insights with Native Analytics ──────────────────────────────────────────────
     if (typeof aiResult === 'object') {
-      // OVERWRITE the raw data sections with our Native Truths
       aiResult.googleSearchRank = googleSearchRank;
       aiResult.profileCompletion = profileCompletion;
-      aiResult.seoScore = nativeSeoScore;
+      aiResult.seoScore = { score: splitProfileScore.seoScore, missingKeywords: [], optimizationOpportunities: [] };
       aiResult.auditConfidence = auditConfidence;
       aiResult.businessIntelligence = businessIntelligence;
+      aiResult.strengths = strengths;
+      aiResult.quickWins = quickWins;
       
-      // Merge Review Metrics into AI's reviewAnalysis
+      if (auditStatus !== 'INSUFFICIENT_DATA') {
+        aiResult.weaknesses = weaknesses;
+        aiResult.priorityFixes = nativePriorityFixes;
+        aiResult.thirtyDayPlan = thirtyDayPlan;
+        aiResult.ninetyDayPlan = ninetyDayPlan;
+        aiResult.growthOpportunities = growthOpportunities;
+      }
+      
       aiResult.reviewAnalysis = {
-        ...aiResult.reviewAnalysis,
+        ...(aiResult.reviewAnalysis || {}),
         reviewCount: reviewMetrics.reviewCount,
         averageRating: reviewMetrics.averageRating,
         reviewsPerWeek: reviewMetrics.reviewsPerWeek,
@@ -154,9 +257,8 @@ export async function processAuditJob(auditId: string) {
       };
 
       aiResult.businessTier = targetTier;
-      aiResult.competitors = accepted; // Save explicitly
+      aiResult.competitors = accepted; 
       
-      // Inject Evidence
       aiResult.evidence = {
         competitors: compEvidence,
         searchRankings: rankingsEvidence,
@@ -164,20 +266,20 @@ export async function processAuditJob(auditId: string) {
         reviewAnalysis: reviewMetricsPayload.evidenceSource
       };
 
-      // V7 Scoring compilation
-      let finalScore = (
-        profileCompletion.completionPercentage * 0.4 + 
-        nativeSeoScore.score * 0.3 + 
-        (formattedReviews.length > 0 ? 30 : 0) // rough review score proxy
-      );
-      
-      if (!aiResult.profileScore) aiResult.profileScore = {};
-      aiResult.profileScore.overallScore = Math.round(Math.min(100, finalScore));
+      aiResult.profileScore = splitProfileScore;
 
-      audit.auditVersion   = 'V7';
-      audit.overallScore   = aiResult.profileScore.overallScore;
+      audit.auditVersion   = 'V7.2';
+      audit.overallScore   = finalOverallScore;
       audit.auditData      = aiResult;
-      audit.status         = 'COMPLETED';
+      audit.status         = auditStatus;
+      
+      console.log(`[AUDIT ${auditId}] Final Payload:`, JSON.stringify({
+        overallScore: finalOverallScore,
+        profileScore: splitProfileScore,
+        searchRankingsCount: aiResult.googleSearchRank?.topKeywords?.length,
+        competitorsCount: aiResult.competitors?.length,
+        roadmapMonth1: aiResult.ninetyDayPlan?.[0]?.objective
+      }, null, 2));
     }
 
     await audit.save();

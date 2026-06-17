@@ -292,7 +292,9 @@ export default function AuditReportV7({ audit, onDownload }: { audit: IAudit; on
                 <h3 className="font-bold text-emerald-800 mb-2">{s.title}</h3>
                 <div className="text-sm text-slate-600 mb-2">{s.observation}</div>
                 <div className="flex flex-col gap-1 text-xs">
-                  <div className="flex gap-2"><span className="font-bold text-slate-400">Evidence:</span> <span className="font-medium text-slate-700">{s.evidence}</span></div>
+                  {s.evidence && (
+                    <div className="flex gap-2"><span className="font-bold text-slate-400">Evidence:</span> <span className="font-medium text-slate-700">{typeof s.evidence === 'string' ? s.evidence : `${s.evidence.metric}: ${s.evidence.currentValue}`}</span></div>
+                  )}
                   <div className="flex gap-2"><span className="font-bold text-slate-400">Impact:</span> <span className="font-medium text-emerald-600">{s.impact}</span></div>
                 </div>
               </div>
@@ -310,7 +312,9 @@ export default function AuditReportV7({ audit, onDownload }: { audit: IAudit; on
                 <h3 className="font-bold text-rose-800 mb-2">{w.title}</h3>
                 <div className="text-sm text-slate-600 mb-2">{w.observation}</div>
                 <div className="flex flex-col gap-1 text-xs">
-                  <div className="flex gap-2"><span className="font-bold text-slate-400">Evidence:</span> <span className="font-medium text-slate-700">{w.evidence}</span></div>
+                  {w.evidence && (
+                    <div className="flex gap-2"><span className="font-bold text-slate-400">Evidence:</span> <span className="font-medium text-slate-700">{typeof w.evidence === 'string' ? w.evidence : `${w.evidence.metric}: ${w.evidence.currentValue}`}</span></div>
+                  )}
                   <div className="flex gap-2"><span className="font-bold text-slate-400">Risk:</span> <span className="font-medium text-rose-600">{w.risk}</span></div>
                 </div>
               </div>

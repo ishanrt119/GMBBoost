@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useBusiness } from '@/context/BusinessContext';
 
 interface ContentGeneratorFormProps {
   onGenerate: (data: any) => void;
@@ -9,16 +10,35 @@ interface ContentGeneratorFormProps {
 }
 
 export default function ContentGeneratorForm({ onGenerate, isLoading }: ContentGeneratorFormProps) {
+  const { activeBusiness } = useBusiness();
+
   const [formData, setFormData] = useState({
-    businessName: '',
-    businessType: '',
-    location: '',
-    tone: 'Professional',
+    businessName: activeBusiness?.name || '',
+    businessType: activeBusiness?.category || '',
+    location: activeBusiness?.city ? `${activeBusiness.city}, ${activeBusiness.state || ''}`.trim().replace(/,$/, '') : activeBusiness?.address || '',
+    tone: activeBusiness?.aiSettings?.tone || activeBusiness?.tone || 'Professional',
   });
+
+  useEffect(() => {
+    if (activeBusiness) {
+      setFormData({
+        businessName: activeBusiness.name || '',
+        businessType: activeBusiness.category || '',
+        location: activeBusiness.city ? `${activeBusiness.city}, ${activeBusiness.state || ''}`.trim().replace(/,$/, '') : activeBusiness.address || '',
+        tone: activeBusiness.aiSettings?.tone || activeBusiness.tone || 'Professional',
+      });
+    }
+  }, [activeBusiness]);
   
   const [keywordInput, setKeywordInput] = useState('');
-  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>(activeBusiness?.keywords || []);
   const [contentTypes, setContentTypes] = useState<string[]>(['GMB Posts', 'SEO Description', 'FAQs']);
+
+  useEffect(() => {
+    if (activeBusiness) {
+      setKeywords(activeBusiness.keywords || []);
+    }
+  }, [activeBusiness]);
 
   const handleAddKeyword = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && keywordInput.trim()) {

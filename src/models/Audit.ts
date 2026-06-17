@@ -12,13 +12,24 @@ export interface IGoogleSearchRank {
   topKeywords: IKeywordRank[];
 }
 
+export interface IPotentialScoreAnalysis {
+  potentialScore: number;
+  recoverablePoints: number;
+  breakdown: string[];
+}
+
 export interface IProfileScore {
   overallScore: number;
+  completionScore: number;
   seoScore: number;
-  reviewScore: number;
-  profileCompletionScore: number;
-  ratingScore: number;
-  contentScore: number;
+  engagementScore: number;
+  potentialScoreAnalysis?: IPotentialScoreAnalysis;
+  
+  // Legacy compat
+  reviewScore?: number;
+  profileCompletionScore?: number;
+  ratingScore?: number;
+  contentScore?: number;
 }
 
 export interface ISeoScore {
@@ -57,9 +68,18 @@ export interface IKeywordGap {
   priority: 'High' | 'Medium' | 'Low';
 }
 
+export interface IGapScoreBreakdown {
+  reviews: number;
+  rating: number;
+  category: number;
+  profile: number;
+  total: number;
+}
+
 export interface ICompetitorGap {
   missingAdvantages: string[];
   gapScore: number;
+  gapScoreBreakdown?: IGapScoreBreakdown;
 }
 
 export interface ICompetitor {
@@ -71,9 +91,18 @@ export interface ICompetitor {
   distance: string;
   reason: string;
   website?: string;
+  categoryMatchScore?: number;
   similarityScore?: number;
   strengthScore?: number;
+  strength?: string;
   gapAnalysis?: ICompetitorGap;
+}
+
+export interface IStructuredEvidence {
+  metric: string;
+  currentValue: number | string;
+  competitorAverage?: number | string;
+  source: string;
 }
 
 export interface IPriorityFix {
@@ -81,28 +110,33 @@ export interface IPriorityFix {
   reason: string;
   impact: 'High' | 'Medium' | 'Low';
   effort: 'High' | 'Medium' | 'Low';
-  expectedScoreGain: string;
-  revenuePotential: 'High' | 'Medium' | 'Low'; // legacy compat
+  expectedScoreGain: number | string;
+  revenuePotential?: 'High' | 'Medium' | 'Low'; // legacy compat
+  evidence?: IStructuredEvidence;
 }
 
 export interface IStrengthWeakness {
   title: string;
   observation?: string;
-  evidence: string;
+  evidence: IStructuredEvidence | string; // legacy support for string
   impact?: string;
   risk?: string;
 }
 
 export interface IThirtyDayPlan {
   week: string;
+  objective?: string;
   tasks: string[];
   expectedOutcome?: string;
+  expectedScoreGain?: number | string;
 }
 
 export interface INinetyDayPlan {
   month: string;
+  objective?: string;
   tasks: string[];
   focusAreas?: string[];
+  expectedScoreGain?: number | string;
 }
 
 export interface IDataQuality {
@@ -113,9 +147,19 @@ export interface IDataQuality {
   websiteAnalysis: 'Complete' | 'Partial' | 'Unavailable';
 }
 
+export interface IConfidenceBreakdown {
+  profileData: string;
+  competitors: string;
+  keywords: string;
+  reviews: string;
+  websiteAnalysis: string;
+}
+
 export interface IAuditConfidence {
   dataQuality: IDataQuality;
   confidenceScore: number; // e.g. 85 for 85%
+  confidenceBreakdown?: IConfidenceBreakdown;
+  confidenceCalculationVersion?: string;
 }
 
 export interface IBusinessIntelligence {
@@ -149,6 +193,16 @@ export interface IAuditData {
   businessIntelligence?: IBusinessIntelligence;
 }
 
+export interface IAuditSnapshot {
+  reviewCount: number;
+  averageRating: number;
+  profileScore: number;
+  seoScore: number;
+  rankScore: number;
+  competitorCount: number;
+  generatedAt: string;
+}
+
 export interface IAudit extends Document {
   tenantId: string;
   userId: string;
@@ -165,11 +219,14 @@ export interface IAudit extends Document {
   country?: string;
   
   location: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
-  auditVersion: 'V5' | 'V6' | 'V7';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'PARTIAL' | 'INSUFFICIENT_DATA';
+  auditVersion: 'V5' | 'V6' | 'V7' | 'V7.1' | 'V7.2' | 'V8';
   overallScore?: number;
   auditData?: IAuditData;
-  metadata?: any;
+  metadata?: {
+    auditSnapshot?: IAuditSnapshot;
+    [key: string]: any;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -193,10 +250,10 @@ const AuditSchema = new Schema<IAudit>(
     location: { type: String, required: true },
     status: {
       type: String,
-      enum: ['PENDING', 'COMPLETED', 'FAILED'],
+      enum: ['PENDING', 'COMPLETED', 'FAILED', 'PARTIAL', 'INSUFFICIENT_DATA'],
       default: 'PENDING',
     },
-    auditVersion: { type: String, enum: ['V5', 'V6', 'V7'], default: 'V7' },
+    auditVersion: { type: String, enum: ['V5', 'V6', 'V7', 'V7.1', 'V7.2', 'V8'], default: 'V7.2' },
     overallScore: { type: Number },
     auditData: { type: Schema.Types.Mixed }, // Using Mixed for the root data object since it's large and varies heavily
     metadata: { type: Schema.Types.Mixed },
@@ -206,6 +263,10 @@ const AuditSchema = new Schema<IAudit>(
 
 AuditSchema.index({ tenantId: 1, businessName: 1 });
 
-const Audit: Model<IAudit> = mongoose.models.Audit || mongoose.model<IAudit>('Audit', AuditSchema);
+if (mongoose.models.Audit) {
+  delete mongoose.models.Audit;
+}
+
+const Audit: Model<IAudit> = mongoose.model<IAudit>('Audit', AuditSchema);
 
 export default Audit;

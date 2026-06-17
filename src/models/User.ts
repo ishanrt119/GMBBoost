@@ -5,7 +5,7 @@ export interface IUser extends Document {
   email: string;
   phone: string;
   passwordHash?: string; // Optional if you support OAuth later
-  role: 'SUPER_ADMIN' | 'CLIENT';
+  role: 'SUPER_ADMIN' | 'CLIENT' | 'BusinessOwner' | 'Admin' | 'TeamMember' | 'super_admin';
   companyName?: string;
   
   // Verification states
@@ -57,8 +57,8 @@ const UserSchema: Schema = new Schema(
     
     role: { 
       type: String, 
-      enum: ['SUPER_ADMIN', 'CLIENT'], 
-      default: 'CLIENT' 
+      enum: ['SUPER_ADMIN', 'CLIENT', 'BusinessOwner', 'Admin', 'TeamMember', 'super_admin'], 
+      default: 'BusinessOwner' 
     },
     companyName: { type: String },
     

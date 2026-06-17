@@ -23,6 +23,13 @@ interface Business {
   };
   website?: string;
   phone?: string;
+  city?: string;
+  state?: string;
+  tone?: string;
+  keywords?: string[];
+  aiSettings?: {
+    tone?: string;
+  };
 }
 
 interface BusinessContextType {
